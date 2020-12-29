@@ -41,7 +41,7 @@ subprojects {
 
         testImplementation('org.springframework.boot:spring-boot-starter-test') {
             /* JUnit 5를 사용하는 경우 추가, (이하 버전 사용하려는 경우 주석처리) */
-            exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+//            exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
         }
     }
     /* JUnit5를 사용하는 경우 설정 */
@@ -58,6 +58,8 @@ project(":springboot-jpa-shop") {
     dependencies {
         implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
         implementation 'org.springframework.boot:spring-boot-starter-web'
+        implementation 'org.springframework.boot:spring-boot-devtools'
+
     }
 
 }
