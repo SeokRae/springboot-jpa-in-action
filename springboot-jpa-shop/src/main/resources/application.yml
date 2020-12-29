@@ -1,4 +1,8 @@
+# https://docs.spring.io/spring-boot/docs/2.1.7.RELEASE/reference/html/common-application-properties.html
 spring:
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
   datasource:
     # TODO MVCC=TRUE란 조건 찾아보기
     url: jdbc:h2:~/docker/h2/data/jpashop
