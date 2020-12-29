@@ -134,3 +134,24 @@ spring.jpa.hibernate.naming.physical-strategy:
   org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy
 ```
  
+
+# 회원 도메인, 레포지토리, 서비스 개발 및 테스트
+
+- 구현 기능
+    - 회원 등록 회원 목록 조회
+- 순서
+    - 회원 엔티티 코드 다시 보기
+    - 회원 리포지토리 개발
+    - 회원 서비스 개발
+    - 회원 기능 테스트
+
+- 생성자 주입 방식을 권장
+    - 변경 불가능한 안전한 객체 생성 가능
+    - 생성자가 하나면, @Autowired 를 생략할 수 있다.
+    - final 키워드를 추가하면 컴파일 시점에 memberRepository 를 설정하지 않는 오류를 체크할 수 있다. 
+      (보통 기본 생성자를 추가할 때 발견)
+
+## [Test Code 작성 방법](https://martinfowler.com/bliki/GivenWhenThen.html)
+
+- 스프링 부트는 datasource 설정이 없으면, 기본적을 메모리 DB를 사용하고, driver-class도 현재 등록된 라이브러를 보고 찾아준다. 
+  추가로 ddl-auto 도 create-drop 모드로 동작한다. 따라서 데이터소스나, JPA 관련된 별도의 추가 설정을 하지 않아도 된다.
