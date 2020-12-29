@@ -1,24 +1,38 @@
 package kr.seok.shop.domain.repository;
 
 import kr.seok.shop.domain.Member;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+import java.util.List;
 
+/* 스프링 빈으로 등록, JPA 예외를 스프링 기반 예외로 예외 변환 */
 @Repository
+@RequiredArgsConstructor
 public class MemberRepository {
+    /* 엔티티 메니저( EntityManager ) 주입 */
+    // RequiredArgsConstructor추가로 인하여 @PersistenceContext 어노테이션 생략 (자동 주입)
+    private final EntityManager em;
 
-    @PersistenceContext
-    EntityManager em;
-
-    /* Command And Query의 분리 원칙으로 id만 반환 */
-    public Long save(Member member) {
+    public void save(Member member) {
         em.persist(member);
-        return member.getId();
     }
 
-    public Member find(Long id) {
+    public Member findOne(Long id) {
         return em.find(Member.class, id);
+    }
+
+    public List<Member> findAll() {
+        return em.createQuery(
+                "select m from Member m", Member.class)
+                .getResultList();
+    }
+
+    public List<Member> findByName(String name) {
+        return em.createQuery(
+                "select m from Member m where m.name = :name", Member.class)
+                .setParameter("name", name)
+                .getResultList();
     }
 }
