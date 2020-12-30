@@ -1,5 +1,6 @@
-package kr.seok.shop.domain;
+package kr.seok.shop.web;
 
+import kr.seok.shop.domain.OrderStatus;
 import lombok.Getter;
 import lombok.Setter;
 
