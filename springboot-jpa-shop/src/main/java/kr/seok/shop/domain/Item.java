@@ -3,6 +3,7 @@ package kr.seok.shop.domain;
 import kr.seok.shop.exception.NotEnoughStockException;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.List;
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "dtype")
 @Getter @Setter
+@ToString
 public abstract class Item {
 
     @Id @GeneratedValue

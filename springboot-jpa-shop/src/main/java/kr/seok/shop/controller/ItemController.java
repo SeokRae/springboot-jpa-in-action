@@ -50,8 +50,7 @@ public class ItemController {
      * 상품 수정 폼
      */
     @GetMapping(value = "/items/{itemId}/edit")
-    public String updateItemForm(@PathVariable("itemId") Long itemId, Model
-            model) {
+    public String updateItemForm(@PathVariable("itemId") Long itemId, Model model) {
         Book item = (Book) itemService.findOne(itemId);
         BookForm form = new BookForm();
         form.setId(item.getId());
@@ -77,7 +76,7 @@ public class ItemController {
 //        book.setAuthor(form.getAuthor());
 //        book.setIsbn(form.getIsbn());
 
-        itemService.updateItem(form.getId(), form.getName(), form.getPrice());
+        itemService.updateItem(form.getId(), form.getName(), form.getPrice(), form.getStockQuantity());
 //        itemService.saveItem(book);
         return "redirect:/items";
     }
