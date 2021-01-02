@@ -18,11 +18,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /* 반복 가능한 테스트 지원, 각각의 테스트를 실행할 때마다 트랜잭션을 시작하고 테스트 */
 @Transactional
 public class MemberServiceTest {
-    @Autowired
-    MemberService memberService;
-    @Autowired
-    MemberRepository memberRepository;
 
+    @Autowired MemberService memberService;
+    @Autowired MemberRepository memberRepository;
+    //@Autowired EntityManager em;
     /* 회원가입을 성공해야 한다. */
     @Test
     public void 회원가입() {
@@ -32,6 +31,7 @@ public class MemberServiceTest {
         //When
         Long saveId = memberService.join(member);
         //Then
+        // em.flush();
         assertEquals(member, memberRepository.findOne(saveId));
     }
 

@@ -1,25 +1,23 @@
 # 테스트는 케이스 격리된 환경에서 실행하고, 끝나면 데이터를 초기화하는 것이 좋다. 그런 면에서 메모리 DB를 사용하는 것이 가장 이상적이다.
 # 해당경로의 현재 파일이 존재하지 않는 경우 src/resources/application.yml 를 읽는다.
-#spring:
+# 테스트시 메모리 db를 사용하는 것이 좋다. 주석처리한 이유는 설정하지 않아도 autoConfiguration 에서 설정하고 수행하기 때문
+spring:
 #  datasource:
-    # TODO MVCC=TRUE란 조건 찾아보기
-#    url: jdbc:h2:~/docker/h2/data/jpashop
+    # 메모리 버전으로 h2 데이터베이스 띄우기
+#    url: jdbc:h2:mem:test
 #    username: sa
 #    password:
 #    driver-class-name: org.h2.Driver
 
 #  jpa:
 #    hibernate:
-      # 애플리케이션 실행 시점에 테이블을 drop 하고, 다시 생성
-#      ddl-auto: create
+#      ddl-auto: create-drop
 #    properties:
 #      hibernate:
-        # System.out 에 하이버네이트 실행 SQL 출력
-#        show_sql: true
 #        format_sql: true
 
 logging.level:
   # logger를 통해 하이버네이트 실행 SQL
   org.hibernate.SQL: debug
   # 쿼리 호출 시 파라미터 출력
-#  org.hibernate.type: trace
+  org.hibernate.type: trace

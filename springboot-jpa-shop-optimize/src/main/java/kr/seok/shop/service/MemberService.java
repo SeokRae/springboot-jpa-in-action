@@ -14,10 +14,7 @@ import java.util.List;
 /* final 예약어가 설정된 필드를 생성자 주입 */
 @RequiredArgsConstructor
 public class MemberService {
-
-    /* final 키워드를 추가하면 컴파일 시점에 memberRepository 를 설정하지 않는 오류를 체크할 수 있다. (보통 기본 생성자를 추가할 때 발견) */
     private final MemberRepository memberRepository;
-
     /**
      * 회원가입
      */
@@ -37,6 +34,12 @@ public class MemberService {
         if (!findMembers.isEmpty()) {
             throw new IllegalStateException("이미 존재하는 회원입니다.");
         }
+    }
+
+    @Transactional
+    public void update(Long id, String name) {
+        Member member = memberRepository.findOne(id);
+        member.setName(name);
     }
 
     /**

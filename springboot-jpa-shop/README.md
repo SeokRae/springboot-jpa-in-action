@@ -161,6 +161,8 @@
       세밀하게 쿼리를 실행하기 어렵기 때문에 실무에서 사용하기에는 한계가 있다.
     - 중간 엔티티 (CategoryItem 를 만들고 @ManyToOne, @OneToMany 로 매핑해서 사용하자.)
     - 정리하면 대다대 매핑을 일대다, 다대일 매핑으로 풀어 내서 사용하자.
+        - @JoinTable 어노테이션을 사용하여 중간 테이블을 생성
+
 
 - @Embedded 클래스
     - 값 타입은 변경 불가능하게 설계해야 한다.
@@ -283,7 +285,10 @@ spring.jpa.hibernate.naming.physical-strategy:
     - 주문 서비스 개발
     - 주문 검색 기능 개발
     - 주문 기능 테스트
-
+- `CascadeType.ALL`의 사용 범위
+    - 엔티티의 라이프 사이클이 단순한 경우에만 사용
+    - 다른 엔티티도 참조하는 경우 데이터의 정합성에 문제가 생길 수 있다. 
+  
 - 서비스 계층은 단순히 엔티티에 필요한 요청을 위임하는 역할을 한다.
     - 엔티티가 비즈니스 로직을 가지고 객체지향의 특성을 적극 활용하는 것을 [도메인 모델 패턴](https://martinfowler.com/eaaCatalog/domainModel.html)
     - 엔티티에는 비즈니스 로직이 거의 없고 서비스 계층에서 대부분 의 비즈니스 로직을 처리하는 것을 [트랜잭션 스크립트 패턴](https://martinfowler.com/eaaCatalog/transactionScript.html)
