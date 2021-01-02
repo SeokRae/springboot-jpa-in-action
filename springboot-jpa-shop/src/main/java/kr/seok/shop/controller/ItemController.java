@@ -68,6 +68,7 @@ public class ItemController {
      */
     @PostMapping(value = "/items/{itemId}/edit")
     public String updateItem(@ModelAttribute("form") BookForm form) {
+        /* 준영속 엔티티 (식별자 아이디가 존재하는 엔티티) */
 //        Book book = new Book();
 //        book.setId(form.getId());
 //        book.setName(form.getName());

@@ -13,6 +13,7 @@ public class ItemRepository {
 
     private final EntityManager em;
 
+    /* merge 시 특정 값이 없으면 값을 변경하지 않는게 아니라 null로 업데이트 해버림 */
     public void save(Item item) {
         if(item.getId() == null) {
             em.persist(item);
