@@ -399,3 +399,12 @@ spring.jpa.hibernate.naming.physical-strategy:
         - 트랜잭션 커밋 시점에 변경 감지가 실행된다.
         
 > `데이터 수정 코드 다시 한번 위 조건에 부합한지 확인하기`
+
+
+- 강의 질문 내용 정리
+    - [준영속 엔티티](https://www.inflearn.com/questions/116627)
+    - [cascade](https://www.inflearn.com/questions/99175)
+    - [JPA @id 전략](https://www.inflearn.com/questions/89067)
+    - [개발 진행 순서](https://www.inflearn.com/questions/79544)
+    - [Junit5 사용시](https://www.inflearn.com/questions/42746)
+    - [엔티티 생성 메서드를 사용하는 기준](https://www.inflearn.com/questions/38376)

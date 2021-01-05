@@ -13,8 +13,9 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
-public class MemberController {
+public class MemberApiController {
     private final MemberService memberService;
+
     /**
      * 등록 V1: 요청 값으로 Member 엔티티를 직접 받는다.
      * 문제점
@@ -26,8 +27,7 @@ public class MemberController {
      * - API 요청 스펙에 맞추어 별도의 DTO를 파라미터로 받는다.
      */
     @PostMapping("/api/v1/members")
-    public CreateMemberResponse saveMemberV1(
-            @RequestBody @Valid Member member) {
+    public CreateMemberResponse saveMemberV1(@RequestBody @Valid Member member) {
 
         Long id = memberService.join(member);
         return new CreateMemberResponse(id);
@@ -42,8 +42,7 @@ public class MemberController {
      * [중요] 실무에서는 엔티티를 API 스펙에 노출하면 안된다!
      */
     @PostMapping("/api/v2/members")
-    public CreateMemberResponse saveMemberV2(
-            @RequestBody @Valid CreateMemberRequest request) {
+    public CreateMemberResponse saveMemberV2(@RequestBody @Valid CreateMemberRequest request) {
 
         Member member = new Member();
         member.setName(request.getName());
