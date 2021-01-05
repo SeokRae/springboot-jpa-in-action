@@ -33,7 +33,7 @@ public class OrderRepository {
     }
     public List<Order> findAll() {
         return em.createQuery(
-                "select  ㅡㅏo From o", Order.class)
+                "select o From o", Order.class)
                 .getResultList();
     }
     /**
