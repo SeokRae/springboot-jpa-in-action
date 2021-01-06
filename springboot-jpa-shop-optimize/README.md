@@ -126,7 +126,13 @@ static class SimpleOrderDto {
 4. 최후의 방법은 JPA가 제공하는 Native SQL이나 스프링 JDBC Template을 사용하여 SQL을 직접 사용한다.
 
 ## API 개발 고급 - 컬렉션 조회 최적화
+- OneToMany를 조회하고 최적화하는 내용을 정리
+
+> 엔티티 직접 노출
+
 
 ## 참고
+- [Transaction 범위에서 벗어난 준영속상태](https://www.inflearn.com/questions/98643)
 - [fetch vs EAGER](https://www.inflearn.com/questions/39516)
 - [fetch vs EAGER2](https://www.inflearn.com/questions/30446)
+- [JPA Proxy](https://www.inflearn.com/course/ORM-JPA-Basic/lecture/21708?tab=curriculum)
