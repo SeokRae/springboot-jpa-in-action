@@ -170,7 +170,7 @@ Collection Fetch Join은 1개만 사용할 수 있다.
  
 ```
 
-> 엔티티를 DTO로 변환 - 페이징과 한계 돌파
+> 엔티티를 DTO로 변환 - 페이징과 한계 돌파 [ordersV3_page()](src/main/java/kr/seok/shop/api/OrderApiController.java)
 - 이전 버전에서의 문제가 페이징이 불가능하다는 점을 개선하는 버전
   - 컬렉션을 Fetch Join하면 1:N 조인이 발생하므로 **데이터가 예측할 수 없이 증가**한다.
   - 1:N에서 1을 기준으로 페이징을 하는 것이 목적, 그런데 데이터는 N을 기준으로 row가 생성된다.
@@ -182,7 +182,7 @@ Collection Fetch Join은 1개만 사용할 수 있다.
   - 아래 내용을 통해 `페이징 + 컬렉션 엔티티 조회 문제`를 해결할 수 있다.
     - 단순한 코드, 성능 최적화를 얻기 위한 방법
 
-- `페이징 + 컬렉션 엔티티 조회 문제`를 해결책
+- `페이징 + 컬렉션 엔티티 조회 문제`를 해결책 [findAllWithMemberDelivery()](src/main/java/kr/seok/shop/domain/repository/OrderRepository.java)
   - xToOne(OneToOne, ManyToOne) 관계를 모두 Fetch Join한다.
   - xToOne 관계는 row수를 증가시키지 않으므로 페이징 쿼리에 영향을 주지 않는다.
   - 컬렉션은 지연로딩으로 조회한다.
@@ -196,7 +196,10 @@ Collection Fetch Join은 1개만 사용할 수 있다.
   - xToOne 관계는 Fetch Join 사용
   - 컬렉션은 LAZY
   - 글로벌 설정은 `hibernate.default_batch_fetch_size`을 기본으로 설정
+    - [application.yml](src/main/resources/application.yml)
   - 각 개별 설정으로 `@BatchSize`를 적용
+    - [Order.orderItem](src/main/java/kr/seok/shop/domain/Order.java)
+    - [Item](src/main/java/kr/seok/shop/domain/Item.java)
 
 - 장점
   - 쿼리 호출 수가 `1 + N` -> `1 + 1`로 최적화
@@ -222,6 +225,23 @@ Collection Fetch Join은 1개만 사용할 수 있다.
 - 다시 order > orderItem처럼 orderItem > item 조회시 이미 조회된 orderItem 엔티티의 Pk 값을 item 조회시 in 쿼리로 조회하여 성능 최적화 가능
 - 1:N:M -> 1:1:1
 ```
+
+> JPA에서 DTO로 바로조회 - 컬렉션 N 조회 (1 + N Query) [ordersV4()](src/main/java/kr/seok/shop/api/OrderApiController.java)
+- 작업 방식
+  - Fetch Join으로 한번에 호출 할 수 있는 xToOne 연관관계들을 먼저 조회한 뒤에 ToMany 연관관계들을 별도로 처리
+  - ToOne 관계들을은 조인을 해도 데이터 Row 수가 증가하지 않는다. 
+    - 때문에 db 데이터 량에서 최적화라 할 수 있음
+    - ToMany 관계는 Join으로 최적화하기 어려우므로 별도로 호출
+  - order > member, order > delivery 먼저 조회
+  - orderId를 통해 orderItem > item 간의 ToOne 연관관계를 조회
+
+- 장점
+  - 페이징이 가능해짐, 먼저 order에 대한 페이징후에 컬렉션을 조회하면 됨
+  
+- 단점이라기보다 더 개선할 수 있는 부분
+  - order 쿼리 1번, 컬렉션 N번 실행
+  - 이보다 더 최적화 할 수 있는 방법이 있음
+  
 
 ## 참고
 - [Transaction 범위에서 벗어난 준영속상태](https://www.inflearn.com/questions/98643)

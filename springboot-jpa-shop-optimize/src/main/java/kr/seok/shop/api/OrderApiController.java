@@ -189,6 +189,7 @@ public class OrderApiController {
     public List<OrderQueryDto> ordersV4() {
         return orderQueryRepository.findOrderQueryDtos();
     }
+
     /**
      * V5. JPA에서 DTO로 바로 조회, 컬렉션 1조회 최적화 버전 (1 + 1 Query)
      * - 페이징 가능

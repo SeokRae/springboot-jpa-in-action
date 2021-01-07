@@ -32,7 +32,8 @@ public class OrderQueryRepository {
 
     /**
      * 1:N 관계(컬렉션)를 제외한 나머지를 한 번에 조회
-     * SQL과 같이 서브 쿼리안에 multi row가 있을 수 없음
+     * - SQL과 같이 서브 쿼리안에 multi row가 있을 수 없음
+     * - 그래서 따로 메서드로 orderItems 호출
      */
     private List<OrderQueryDto> findOrders() {
         return em.createQuery(
@@ -47,7 +48,7 @@ public class OrderQueryRepository {
 
     /**
      * 1:N 관계인 orderItems 조회
-     * orderItem > item 관계 ToOne
+     * - orderItem > item 관계 ToOne
      */
     private List<OrderItemQueryDto> findOrderItems(Long orderId) {
         return em.createQuery(
