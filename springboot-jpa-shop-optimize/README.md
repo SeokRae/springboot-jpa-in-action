@@ -128,8 +128,47 @@ static class SimpleOrderDto {
 ## API 개발 고급 - 컬렉션 조회 최적화
 - OneToMany를 조회하고 최적화하는 내용을 정리
 
-> 엔티티 직접 노출
+> 엔티티 직접 노출 [ordersV1()](src/main/java/kr/seok/shop/api/OrderApiController.java)
+- **작성 방식**
+  - Hibernate5Module Bean으로 등록 후 Lazy = null 처리
+  - 양방향 관계 문제 시 연관관계 한쪽 엔티티의 해당 필드에 @JsonIgnore 설정으로 무한루프 해결
+- **문제점**
+  - 엔티티가 API에 그대로 노출되는 문제
+  
+> 엔티티를 DTO로 변환 [ordersV2()](src/main/java/kr/seok/shop/api/OrderApiController.java)
+- **작성 방식**
+  - 최우선으로 문제되는 `Entity`가 `API`로 노출되는 문제를 `DTO`로 변경
+  - 하지만 전 버전과 같이 Lazy의 강제 초기화 처리로 지연로딩으로 호출
+- **문제점**
+  - order > member ( 1:N )
+  - order > address ( 1:N )
+  - order > orderItem ( 1:N )
+  - order > orderItem > item (1:N:N) 처럼 연관관계가 설정되어있는 만큼 기하급수적으로 조회를 하게 됨
+  - 물론 이전에 한 번 로딩한 엔티티가 있다면 캐시내에 존재하고 있기 때문에 SQL 조회는 하지 않으나 효과는 미미함
 
+> 엔티티를 DTO로 변환 - Fetch Join [ordersV3()](src/main/java/kr/seok/shop/api/OrderApiController.java)
+- **작성 방식**
+  - Controller 로직은 v2와 같으나 Repository 로직이 추가됨
+  - `join fetch`라는 명령어를 통해 조회 [findAllWithItem()](src/main/java/kr/seok/shop/domain/repository/OrderRepository.java)
+  - Fetch Join으로 SQL 쿼리가 1번만 실행됨
+- **`distinct`의 동작 방식**
+  - `distinct`를 사용하지 않는 경우 1:N 조인이 있으므로 db row가 증가한다. -> 중복 데이터를 포함 (같은 order 엔티티가 N만큼 조회)
+    - 마치 `outer join`과 같이 조회 됨
+  - `distinct` 명령어를 추가하면 db에서 동일한 entity가 조회되는 경우 JPA에서 중복을 걸러준다.
+- **문제점**
+  - 페이징이 불가능
+
+```text
+중요 > 해당 부분은 Fetch Join에 대한 개념이 필요 
+컬렉션 Fetch Join을 사용하면 페이징이 불가능하다. 
+하이버네이트는 WARN 로그를 남기면서 모든 데이터를 DB에서 읽어오고, 메모리에서 페이징을 한다.
+(이는 매우 위험한 방식)
+
+Collection Fetch Join은 1개만 사용할 수 있다.
+컬렉션 둘 이상에 Fetch Join을 사용하면 안된다.
+데이터가 부정합하게 조회될 수 있다.
+ 
+```
 
 ## 참고
 - [Transaction 범위에서 벗어난 준영속상태](https://www.inflearn.com/questions/98643)

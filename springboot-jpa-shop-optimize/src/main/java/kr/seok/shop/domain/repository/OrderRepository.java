@@ -120,6 +120,9 @@ public class OrderRepository {
                 .getResultList();
     }
 
+    /**
+     * 주문 조회 v3 fetch join
+     */
     public List<Order> findAllWithItem() {
         return em.createQuery(
                 "select distinct o from Order o"
