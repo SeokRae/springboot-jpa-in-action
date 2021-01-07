@@ -143,7 +143,7 @@ static class SimpleOrderDto {
   - order > member ( 1:N )
   - order > address ( 1:N )
   - order > orderItem ( 1:N )
-  - order > orderItem > item (1:N:N) 처럼 연관관계가 설정되어있는 만큼 기하급수적으로 조회를 하게 됨
+  - order > orderItem > item (1:N:M) 처럼 연관관계가 설정되어있는 만큼 기하급수적으로 조회를 하게 됨
   - 물론 이전에 한 번 로딩한 엔티티가 있다면 캐시내에 존재하고 있기 때문에 SQL 조회는 하지 않으나 효과는 미미함
 
 > 엔티티를 DTO로 변환 - Fetch Join [ordersV3()](src/main/java/kr/seok/shop/api/OrderApiController.java)
@@ -170,8 +170,62 @@ Collection Fetch Join은 1개만 사용할 수 있다.
  
 ```
 
+> 엔티티를 DTO로 변환 - 페이징과 한계 돌파
+- 이전 버전에서의 문제가 페이징이 불가능하다는 점을 개선하는 버전
+  - 컬렉션을 Fetch Join하면 1:N 조인이 발생하므로 **데이터가 예측할 수 없이 증가**한다.
+  - 1:N에서 1을 기준으로 페이징을 하는 것이 목적, 그런데 데이터는 N을 기준으로 row가 생성된다.
+  - `Order`(1)을 기준으로 페이징 하고 싶은데, `OrderItem`(N)을 조인하면 `OrderItem`이 기준이되어 버린다.
+  - **하이버네이트는 WARN 경로를 남기고 모든 DB 데이터를 읽어 메모리에서 페이징을 시도, 최악의 경우 장애로 이어질 수 있다.**
+
+- 한계 돌파
+  - 페이징 + 컬렉션 엔티티를 함께 조회하기 위해 현재 이슈를 어떻게 해결해야 할까?
+  - 아래 내용을 통해 `페이징 + 컬렉션 엔티티 조회 문제`를 해결할 수 있다.
+    - 단순한 코드, 성능 최적화를 얻기 위한 방법
+
+- `페이징 + 컬렉션 엔티티 조회 문제`를 해결책
+  - xToOne(OneToOne, ManyToOne) 관계를 모두 Fetch Join한다.
+  - xToOne 관계는 row수를 증가시키지 않으므로 페이징 쿼리에 영향을 주지 않는다.
+  - 컬렉션은 지연로딩으로 조회한다.
+  - 지연로딩 성능 최적화를 위해 `hibernate.default_batch_fetch_size`, `@BatchSize`를 적용
+    - `hibernate.default_batch_fetch_size`: 글로벌 설정
+    - `@BatchSize`: 개별 최적화
+      - **컬렉션은 컬렉션 필드에, 엔티티는 엔티티 클래스에 적용**
+    - 위 두가지 옵션을 통해 컬렉션이나, 프록시 객체를 한꺼번에 설정한 size만큼 IN 쿼리로 조회한다.
+
+- 다시 정리
+  - xToOne 관계는 Fetch Join 사용
+  - 컬렉션은 LAZY
+  - 글로벌 설정은 `hibernate.default_batch_fetch_size`을 기본으로 설정
+  - 각 개별 설정으로 `@BatchSize`를 적용
+
+- 장점
+  - 쿼리 호출 수가 `1 + N` -> `1 + 1`로 최적화
+  - 조인보다 DB 데이터 전송량이 최적화 된다.
+    (Order와 OrderItem을 조인하면 Order가 OrderItem만큼 중복해서 조회된다.)
+  - Fetch Join 방식과 비교하여 쿼리 호출 수가 약간 증가하지만 DB 데이터 전송량이 감소한다.
+  - 컬렉션 Fetch Join은 페이징이 불가능하지만 이 방식은 페이징이 가능하다.
+
+- 결론
+  - xToOne 관계는 Fetch Join해도 페이징에 영향을 주지 않는다.
+  - 따라서 xToOne 관계는 FetchJoin으로 쿼리 수를 줄여 해결하고, 나머지는 `hibernate.default_batch_fetch_size`로 최적화 한다.
+
+```text
+[참고] hibernate.default_batch_fetch_size 크기에 관한 내용
+100 ~ 1000 사이를 선택하는 것을 권장
+이 전략을 SQL IN 절을 사용하는데, 데이터베이스에 따라 IN 절 파라미터를 1000으로 제한하기도 한다.
+1000으로 잡으면 한 번에 1000개를 DB에서 애플리케이션에 불러오므로 DB에 순간 부하가 증가할 수 있다.
+하지만 애플리케이션은 100이든 100이든 결국 전체 데이터를 로딩해야 하므로 메모리 사용량이 같다.
+1000으로 설정하는 것이 성능상 가장 좋지만, 결국 DB든 애플리케이션이든 순간 부하를 어디까지 견딜 수 있으지로 결정한다.
+
+다시 정리
+- 조회된 order에 대한 엔티티 아이디를 가지고 orderItem 조회시 in 쿼리를 통해 제한적으로 조회하여 성능상 유리
+- 다시 order > orderItem처럼 orderItem > item 조회시 이미 조회된 orderItem 엔티티의 Pk 값을 item 조회시 in 쿼리로 조회하여 성능 최적화 가능
+- 1:N:M -> 1:1:1
+```
+
 ## 참고
 - [Transaction 범위에서 벗어난 준영속상태](https://www.inflearn.com/questions/98643)
 - [fetch vs EAGER](https://www.inflearn.com/questions/39516)
 - [fetch vs EAGER2](https://www.inflearn.com/questions/30446)
 - [JPA Proxy](https://www.inflearn.com/course/ORM-JPA-Basic/lecture/21708?tab=curriculum)
+- [default_batch_fetch_size관련 질문](https://www.inflearn.com/questions/34469)

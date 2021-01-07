@@ -1,4 +1,4 @@
-package kr.seok.shop.domain.repository;
+package kr.seok.shop.domain.repository.query;
 
 import kr.seok.shop.domain.dto.OrderSimpleQueryDto;
 import lombok.RequiredArgsConstructor;
@@ -7,6 +7,9 @@ import org.springframework.stereotype.Repository;
 import javax.persistence.EntityManager;
 import java.util.List;
 
+/**
+ * 직접 쿼리 요청 관련 레포지토리
+ */
 @Repository
 @RequiredArgsConstructor
 public class OrderSimpleQueryRepository {

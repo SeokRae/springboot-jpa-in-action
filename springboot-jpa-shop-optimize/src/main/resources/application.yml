@@ -19,9 +19,13 @@ spring:
         # System.out 에 하이버네이트 실행 SQL 출력
 #        show_sql: true
         format_sql: true
+        # 주문조회 v3.1 성능 최적화 설정 > 정해진 갯수만큼 먼저 읽어옴
+        default_batch_fetch_size: 1000
 
 logging.level:
   # logger를 통해 하이버네이트 실행 SQL
   org.hibernate.SQL: debug
   # 쿼리 호출 시 파라미터 출력
   org.hibernate.type: trace
+
+

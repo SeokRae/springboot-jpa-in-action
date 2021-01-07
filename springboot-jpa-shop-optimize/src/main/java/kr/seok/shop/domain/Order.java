@@ -26,6 +26,8 @@ public class Order {
     @JoinColumn(name = "member_id")
     private Member member; //주문 회원
 
+    /* 조회 최적화를 위한 어노테이션 */
+//    @BatchSize(size = 1000)
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> orderItems = new ArrayList<>(); // 주문 상품
 

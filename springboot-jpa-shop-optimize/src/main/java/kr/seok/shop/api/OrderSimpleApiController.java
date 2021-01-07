@@ -5,7 +5,7 @@ import kr.seok.shop.domain.Order;
 import kr.seok.shop.domain.OrderStatus;
 import kr.seok.shop.domain.dto.OrderSimpleQueryDto;
 import kr.seok.shop.domain.repository.OrderRepository;
-import kr.seok.shop.domain.repository.OrderSimpleQueryRepository;
+import kr.seok.shop.domain.repository.query.OrderSimpleQueryRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;

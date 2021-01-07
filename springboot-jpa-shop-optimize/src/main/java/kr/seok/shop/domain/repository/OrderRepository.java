@@ -3,6 +3,7 @@ package kr.seok.shop.domain.repository;
 
 import kr.seok.shop.domain.Member;
 import kr.seok.shop.domain.Order;
+import kr.seok.shop.domain.repository.query.OrderQueryDto;
 import kr.seok.shop.web.OrderSearch;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -122,6 +123,9 @@ public class OrderRepository {
 
     /**
      * 주문 조회 v3 fetch join
+     * - 쿼리 1번에 모두 조회
+     * - SQL로 보면 중복데이터를 일단 다 조회 해버림, 때문에 데이터베이스 데이터 전송량을 보면 최적화라고 할 수가 없음
+     * - 페이징이 안됨
      */
     public List<Order> findAllWithItem() {
         return em.createQuery(
@@ -131,6 +135,22 @@ public class OrderRepository {
                         + " join fetch o.orderItems oi"
                         + " join fetch oi.item i"
                 , Order.class)
+                .getResultList();
+    }
+
+    /**
+     * 주문 조회 v3.1 Fetch Join 및 페이징
+     * - 쿼리 3번으로 1:1:1 조회, 대신 SQL IN Query를 통해 필요한 데이터만 조회
+     * - 필요한 데이터만 조회되기 때문에 v3보다 데이터 전송량에서 최적화 되었다고 할 수 있음
+     * - 페이징이 가능
+     */
+    public List<Order> findAllWithMemberDelivery(int offset, int limit) {
+        return em.createQuery(
+                "select o from Order o"
+                        + " join fetch o.member m"
+                        + " join fetch o.delivery d", Order.class)
+                .setFirstResult(offset)
+                .setMaxResults(limit)
                 .getResultList();
     }
 }

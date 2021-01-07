@@ -5,9 +5,12 @@ import kr.seok.shop.domain.Order;
 import kr.seok.shop.domain.OrderItem;
 import kr.seok.shop.domain.OrderStatus;
 import kr.seok.shop.domain.repository.OrderRepository;
+import kr.seok.shop.domain.repository.query.OrderQueryDto;
+import kr.seok.shop.domain.repository.query.OrderQueryRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
@@ -17,9 +20,8 @@ import static java.util.stream.Collectors.toList;
 
 /**
  *
- * V4.JPA에서 DTO로 바로 조회, 컬렉션 N 조회 (1+NQuery) * - 페이징 가능
  *
- * V5.JPA에서 DTO로 바로 조회, 컬렉션 1 조회 최적화 버전 (1+1Query) * - 페이징 가능
+ *
  *  V6. JPA에서 DTO로 바로 조회, 플랫 데이터(1Query) (1 Query)
  * - 페이징 불가능...
  *
@@ -28,6 +30,8 @@ import static java.util.stream.Collectors.toList;
 @RequiredArgsConstructor
 public class OrderApiController {
     private final OrderRepository orderRepository;
+    private final OrderQueryRepository orderQueryRepository;
+
     /**
      *
      * V1. 엔티티 직접 노출
@@ -76,10 +80,9 @@ public class OrderApiController {
     @GetMapping("/api/v2/orders")
     public List<OrderDto> ordersV2() {
         List<Order> orders = orderRepository.findAll();
-        List<OrderDto> result = orders.stream()
+        return orders.stream()
                 .map(o -> new OrderDto(o))
                 .collect(toList());
-        return result;
     }
 
     /**
@@ -143,9 +146,51 @@ public class OrderApiController {
     @GetMapping("/api/v3/orders")
     public List<OrderDto> ordersV3() {
         List<Order> orders = orderRepository.findAllWithItem();
-        List<OrderDto> result = orders.stream()
+        return orders.stream()
                 .map(o -> new OrderDto(o))
                 .collect(toList());
-        return result;
     }
+
+    /**
+     * V3.1 엔티티를 조회해서 DTO로 변환 페이징 고려
+     * - 작업 방식
+     *   - ToOne 관계만 우선 모두 Fetch Join으로 최적화
+     *   - 컬렉션간 연관관계는 LAZY로 설정
+     *   - 글로벌 설정은 `hibernate.default_batch_fetch_size`을 기본으로 설정
+     *   - 각 개별 설정으로 `@BatchSize`를 적용
+     *
+     * - 장점
+     *   - 쿼리 호출 수가 `1 + N` -> `1 + 1`로 최적화
+     *   - 조인보다 DB 데이터 전송량이 최적화 된다.
+     *     (Order와 OrderItem을 조인하면 Order가 OrderItem만큼 중복해서 조회된다.)
+     *   - Fetch Join 방식과 비교하여 쿼리 호출 수가 약간 증가하지만 DB 데이터 전송량이 감소한다.
+     *   - 컬렉션 Fetch Join은 페이징이 불가능하지만 이 방식은 페이징이 가능하다.
+     *
+     * - 결론
+     *   - xToOne 관계는 Fetch Join해도 페이징에 영향을 주지 않는다.
+     *   - 따라서 xToOne 관계는 FetchJoin으로 쿼리 수를 줄여 해결하고, 나머지는 `hibernate.default_batch_fetch_size`로 최적화 한다.
+     */
+    @GetMapping("/api/v3.1/orders")
+    public List<OrderDto> ordersV3_page(
+            @RequestParam(value = "offset", defaultValue = "0") int offset,
+            @RequestParam(value = "limit", defaultValue = "100") int limit
+    ) {
+        List<Order> orders = orderRepository.findAllWithMemberDelivery(offset, limit);
+        return orders.stream()
+                .map(o -> new OrderDto(o))
+                .collect(toList());
+    }
+    /**
+     * V4. JPA에서 DTO로 바로 조회, 컬렉션 N 조회 (1 + N Query)
+     * - 페이징 가능
+     *
+     */
+    @GetMapping("/api/v4/orders")
+    public List<OrderQueryDto> ordersV4() {
+        return orderQueryRepository.findOrderQueryDtos();
+    }
+    /**
+     * V5. JPA에서 DTO로 바로 조회, 컬렉션 1조회 최적화 버전 (1 + 1 Query)
+     * - 페이징 가능
+     */
 }
