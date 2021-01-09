@@ -4,15 +4,18 @@ buildscript {
     }
     repositories {
         mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }  /* QueryDSL 로 인해 추가 */
     }
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
         classpath "io.spring.gradle:dependency-management-plugin:0.6.0.RELEASE"
+        classpath "gradle.plugin.com.ewerk.gradle.plugins:querydsl-plugin:1.0.10"   /* QueryDSL 로 인해 추가 */
     }
 }
 
 
 subprojects {
+
     apply plugin: 'java'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'org.springframework.boot'
@@ -52,6 +55,7 @@ subprojects {
     clean {
         delete 'out'
     }
+
 }
 
 project(":springboot-jpa-shop") {
@@ -64,6 +68,9 @@ project(":springboot-jpa-shop") {
 }
 
 project(":springboot-jpa-shop-optimize") {
+    /* QueryDSL 로 인해 추가 */
+    apply plugin: "com.ewerk.gradle.plugins.querydsl"
+
     dependencies {
         /* entity lazyloading 해결을 위해서 해당 모듈을 등록하는것 잘못된 해결법 */
         implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate5'
@@ -72,6 +79,30 @@ project(":springboot-jpa-shop-optimize") {
         implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
         implementation 'org.springframework.boot:spring-boot-starter-validation'
 
+        // QueryDSL
+        implementation 'com.querydsl:querydsl-jpa'
+        implementation 'com.querydsl:querydsl-apt'
     }
 
+    //querydsl 추가
+    //def querydslDir = 'src/main/generated'
+    def querydslDir = "$buildDir/generated/querydsl"
+    querydsl {
+        library = "com.querydsl:querydsl-apt"
+        jpa = true
+        querydslSourcesDir = querydslDir
+    }
+    sourceSets {
+        main {
+            java {
+                srcDirs = ['src/main/java', querydslDir]
+            }
+        }
+    }
+    compileQuerydsl{
+        options.annotationProcessorPath = configurations.querydsl
+    }
+    configurations {
+        querydsl.extendsFrom compileClasspath
+    }
 }
