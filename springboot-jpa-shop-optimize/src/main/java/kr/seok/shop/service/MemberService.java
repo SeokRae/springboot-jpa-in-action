@@ -1,6 +1,7 @@
 package kr.seok.shop.service;
 
 import kr.seok.shop.domain.Member;
+import kr.seok.shop.domain.repository.MemberJpaRepository;
 import kr.seok.shop.domain.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MemberService {
     private final MemberRepository memberRepository;
+    private final MemberJpaRepository memberJpaRepository;
     /**
      * 회원가입
      */
@@ -22,13 +24,13 @@ public class MemberService {
     public Long join(Member member) {
 
         validateDuplicateMember(member); //중복 회원 검증
-        memberRepository.save(member);
+        memberJpaRepository.save(member);
 
         return member.getId();
     }
 
     private void validateDuplicateMember(Member member) {
-        List<Member> findMembers = memberRepository.findByName(
+        List<Member> findMembers = memberJpaRepository.findByName(
                 /* 멀티 스레드 환경에서 비즈니스 로직이 실행되는 경우 duplicate 오류 발생이 가능하므로 member.name 필드에 unique 설정 필요 */
                 member.getName());
         if (!findMembers.isEmpty()) {
@@ -38,7 +40,7 @@ public class MemberService {
 
     @Transactional
     public void update(Long id, String name) {
-        Member member = memberRepository.findOne(id);
+        Member member = memberJpaRepository.findById(id).get();
         member.setName(name);
     }
 
@@ -46,10 +48,10 @@ public class MemberService {
      * 전체 회원 조회
      */
     public List<Member> findMembers() {
-        return memberRepository.findAll();
+        return memberJpaRepository.findAll();
     }
 
     public Member findOne(Long memberId) {
-        return memberRepository.findOne(memberId);
+        return memberJpaRepository.findById(memberId).get();
     }
 }
