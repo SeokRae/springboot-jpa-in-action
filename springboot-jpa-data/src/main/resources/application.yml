@@ -1,0 +1,25 @@
+spring:
+  # db connection 정보
+  datasource:
+    url: jdbc:h2:~/docker/h2/data/datajpa
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  # Jpa 관련 설정
+  jpa:
+    hibernate:
+      # 어플리케이션 로딩시점에 table 생성
+      ddl-auto: create
+    properties:
+      hibernate:
+        # jpa 실행 쿼리 출력
+#        show_sql: true
+        format_sql: true
+
+# 로그
+logging.level:
+  # jpa 쿼리를 로그 파일로 출력
+  org.hibernate.SQL: debug
+  # 로그 파라미터까지 확인
+#  org.hibernate.type: trace

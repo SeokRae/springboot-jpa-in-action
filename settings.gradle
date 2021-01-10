@@ -1,3 +1,4 @@
 rootProject.name = 'springboot-jpa-in-action'
 include 'springboot-jpa-shop', 'springboot-jpa-shop-optimize'
+include 'springboot-jpa-data'
 
