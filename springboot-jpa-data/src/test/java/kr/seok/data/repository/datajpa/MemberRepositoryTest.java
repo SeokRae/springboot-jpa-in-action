@@ -1,17 +1,26 @@
 package kr.seok.data.repository.datajpa;
 
 import kr.seok.data.domain.Member;
-import kr.seok.data.repository.jpa.MemberJpaRepository;
+import kr.seok.data.domain.Team;
+import kr.seok.data.domain.dto.MemberDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Spring-data-jpa 기반 코드 테스트
@@ -23,6 +32,8 @@ class MemberRepositoryTest {
 
     @Autowired
     private MemberRepository memberRepository;
+    @Autowired
+    private TeamRepository teamRepository;
 
     @Test
     @DisplayName("Spring-Data-JPA 기반 코드: Member 객체 확인")
@@ -81,4 +92,224 @@ class MemberRepositoryTest {
         assertThat(result.get(0).getAge()).isEqualTo(20);
         assertThat(result.size()).isEqualTo(1);
     }
+
+    @Test
+    @DisplayName("Member의 username List 조회 테스트")
+    public void findMemberUsername() {
+        Team team = new Team("TeamA");
+        teamRepository.save(team);
+
+        Member m1 = new Member("AAA", 10);
+        m1.setTeam(team);
+        memberRepository.save(m1);
+
+        List<String> usernameList = memberRepository.findByUsernameList();
+        usernameList.forEach(s -> System.out.println("s : " + s));
+    }
+
+    @Test
+    @DisplayName("MemberDto List 조회 테스트")
+    public void findMemberDto() {
+        Team team = new Team("TeamA");
+        teamRepository.save(team);
+
+        Member m1 = new Member("AAA", 10);
+        m1.setTeam(team);
+        memberRepository.save(m1);
+
+        List<MemberDto> memberDto = memberRepository.findMemberDto();
+        memberDto.forEach(member -> System.out.println("Member Dto : " + member));
+    }
+
+    @Test
+    @DisplayName("In 절 어덯게 들어가는지 확인하기 위한 테스트")
+    public void findByNames() {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("AAA", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+        List<Member> byNames = memberRepository.findByNames(Arrays.asList("AAA", "BBB"));
+        byNames.forEach(member -> System.out.println("Member : " + member));
+    }
+
+    @Test
+    public void returnType() {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        Member m3 = new Member("CCC", 30);
+        Member m4 = new Member("CCC", 40);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+        memberRepository.save(m3);
+        memberRepository.save(m4);
+
+        /* 절대 null 이 아님 */
+        List<Member> memberList = memberRepository.findListByUsername("AAA");
+        assertThat(memberList.get(0).getUsername()).isEqualTo(m1.getUsername());
+
+        /* 값이 없으면 null을 반환하므로 문제가 발생할 수 있음 */
+        Member member = memberRepository.findOneByUsername("AAA");
+        assertThat(member.getUsername()).isEqualTo(m1.getUsername());
+
+        /* 단건에 대해서는 optional 처리 */
+        Optional<Member> optionalMember = memberRepository.findOptionalByUsername("AAA");
+        assertThat(optionalMember.get().getUsername()).isEqualTo(m1.getUsername());
+
+        /* 값이 존재하지 않아 isEmpty 값 반환 */
+        Optional<Member> optionalMember2 = memberRepository.findOptionalByUsername("DDD");
+        assertThat(optionalMember2).isEmpty();
+
+    }
+
+    @Test
+    @DisplayName("Single Result 조회에서 2건 이상 조회 되는 경우 예외처리 테스트")
+    public void returnException() {
+        Member m1 = new Member("CCC", 30);
+        Member m2 = new Member("CCC", 40);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        assertThatThrownBy(() -> {
+            /* 2개 이상 값이 넘어오는 경우 에외 */
+            memberRepository.findOptionalByUsername("CCC");
+        }).isInstanceOf(IncorrectResultSizeDataAccessException.class)
+        .hasMessageContaining("query did not return a unique result");
+    }
+
+    /**
+     * 두 번째 파라미터로 받은 Pagable 은 인터페이스로 설정되어 있으나
+     * 실제 사용할 때는 해당 인터페이스를 구현한 org.springframework.data.domain.PageRequest 객체를 사용
+     *
+     * PageRequest 생성자의 첫 번째 파라미터에는 현재 페이지를, 두 번째 파라미터에는 조회할 데이터 수를 입력한다.
+     *
+     * 추가로 정렬 정보도 파라미터로 사용할 수 있다. 참고로 페이지는 0부터 시작한다.
+     *
+     * [주의] Page는 1부터 시작이 아니라 0부터 시작이다.
+     *
+     * [실무] 페이징은
+     * @see Page
+     */
+    @Test
+    @DisplayName("페이징 처리 테스트")
+    public void page() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+        // when
+        PageRequest pageRequest =
+                PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+        Page<Member> page = memberRepository.findPageByAge(10, pageRequest);
+
+        // then
+        List<Member> content = page.getContent(); //조회된 데이터
+        assertThat(content.size()).isEqualTo(3); //조회된 데이터 수
+        assertThat(page.getTotalElements()).isEqualTo(5); //전체 데이터 수
+        assertThat(page.getNumber()).isEqualTo(0); //페이지 번호
+        assertThat(page.getTotalPages()).isEqualTo(2); //전체 페이지 번호
+        assertThat(page.isFirst()).isTrue(); //첫번째 항목인가?
+        assertThat(page.hasNext()).isTrue(); //다음 페이지가 있는가?
+
+    }
+
+    /**
+     * Infinity Scroll (더보기) 같은 경우 사용
+     * @see org.springframework.data.domain.Slice
+     */
+    @Test
+    @DisplayName("Slice를 활용하는 페이징 처리 테스트")
+    public void slice() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+        // when
+        PageRequest pageRequest =
+                PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+        Slice<Member> page = memberRepository.findSliceByAge(10, pageRequest);
+        // then
+        List<Member> content = page.getContent(); //조회된 데이터
+        assertThat(content.size()).isEqualTo(3); //조회된 데이터 수
+        assertThat(page.getNumber()).isEqualTo(0); //페이지 번호
+        assertThat(page.isFirst()).isTrue(); //첫번째 항목인가?
+        assertThat(page.hasNext()).isTrue(); //다음 페이지가 있는가?
+    }
+
+    /**
+     * 그냥 리스트로 데이터를 조회하기
+     */
+    @Test
+    @DisplayName("그냥 데이터를 페이징 처리 테스트")
+    public void listPage() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+        // when
+        PageRequest pageRequest =
+                PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+        List<Member> page = memberRepository.findListByAge(10, pageRequest);
+
+        // then
+        assertThat(page.size()).isEqualTo(3); //조회된 데이터 수
+    }
+
+    @Test
+    @DisplayName("실무에서 사용할 수 있도록 entity -> dto 페이징 처리 테스트")
+    public void entityToDtoPage() {
+        //given
+        Team teamA = new Team("TeamA");
+        Team teamB = new Team("TeamB");
+
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+
+        Member memberA = new Member("member1", 10);
+        memberA.setTeam(teamA);
+        Member memberB = new Member("member2", 10);
+        memberB.setTeam(teamB);
+        Member memberC = new Member("member3", 10);
+        memberC.setTeam(teamA);
+        Member memberD = new Member("member4", 10);
+        memberD.setTeam(teamB);
+        Member memberE = new Member("member5", 10);
+        memberE.setTeam(teamA);
+
+        memberRepository.save(memberA);
+        memberRepository.save(memberB);
+        memberRepository.save(memberC);
+        memberRepository.save(memberD);
+        memberRepository.save(memberE);
+        // when
+        PageRequest pageRequest =
+                PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+        Page<Member> page = memberRepository.findPageByAge(10, pageRequest);
+
+        /* 페이징 처리된 entity 를 Dto로 변환 */
+        Page<MemberDto> map = page.map(m ->
+                MemberDto.builder()
+                        .id(m.getId())
+                        .username(m.getUsername())
+                        /* 연관관계이기 때문에 getTeam() 할 때 매핑이 되어 있는지? 생각하기 */
+                        .teamName(m.getTeam().getName())
+                        .build()
+        );
+
+        // then
+        List<MemberDto> content = map.getContent(); //조회된 데이터
+        assertThat(content.size()).isEqualTo(3); //조회된 데이터 수
+        assertThat(map.getTotalElements()).isEqualTo(5); //전체 데이터 수
+        assertThat(map.getNumber()).isEqualTo(0); //페이지 번호
+        assertThat(map.getTotalPages()).isEqualTo(2); //전체 페이지 번호
+        assertThat(map.isFirst()).isTrue(); //첫번째 항목인가?
+        assertThat(map.hasNext()).isTrue(); //다음 페이지가 있는가?
+
+    }
+
 }

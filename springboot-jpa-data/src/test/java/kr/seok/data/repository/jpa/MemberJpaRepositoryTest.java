@@ -94,4 +94,48 @@ class MemberJpaRepositoryTest {
         Member findMember = result.get(0);
         assertThat(findMember).isEqualTo(m1);
     }
+
+    @Test
+    public void paging() {
+        // given
+        memberJpaRepository.save(new Member("member1", 10));
+        memberJpaRepository.save(new Member("member2", 10));
+        memberJpaRepository.save(new Member("member3", 10));
+        memberJpaRepository.save(new Member("member4", 10));
+        memberJpaRepository.save(new Member("member5", 10));
+
+        int age = 10;
+        /* 데이터 조회 시작 인덱스 */
+        int offset = 2;
+        /* 5개 출력 > 데이터의 최대 건수가 넘어가도 상관 없음 */
+        int limit = 5;
+
+        /*
+        select
+            member0_.member_id as member_i1_0_,
+            member0_.age as age2_0_,
+            member0_.team_id as team_id4_0_,
+            member0_.username as username3_0_
+        from
+            member member0_
+        where
+            member0_.age=?
+        order by
+            member0_.username desc limit ?
+        */
+        // when
+        List<Member> members = memberJpaRepository.findAgeByPage(
+                /* 조회 조건: 나이 */
+                age,
+                /* offset (시작 idx) */
+                offset,
+                /* 데이터 건수 */
+                limit
+        );
+        long totalCount = memberJpaRepository.totalCount(age);
+
+        // then
+        assertThat(members.size()).isEqualTo(3);
+        assertThat(totalCount).isEqualTo(5);
+    }
 }

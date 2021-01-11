@@ -9,7 +9,7 @@ import javax.persistence.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(of = {"id", "username", "age"})
 @NamedQuery(
-        name="Member.findByUsername",
+        name="Member.findNamedQueryByUsername",
         query="select m from Member m where m.username = :username"
 )
 public class Member {
