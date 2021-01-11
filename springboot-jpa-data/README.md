@@ -163,6 +163,7 @@
 > 순수 JPA 페이징과 정렬
 - JPA 페이징
   - 페이징에 대한 개념을 가지고 설계 해야하는 부담이 있다.
+
 - 스프링 데이터 JPA
   - `Page, Slice`와 같은 인터페이스를 제공
     - 페이징과 정렬 파라미터
@@ -190,6 +191,56 @@
   - JPA의 페이징 인터페이스를 사용하여 domain 개발에 집중
 
 > 벌크성 수정 쿼리
+- Jpa 기반 bulk 수정 쿼리
+
+- 스프링 데이터 JPA 기반 bulk 수정 쿼리
+  - `bulk`성 쿼리 설정
+    - `@Modifying`을 사용하여 bulk 성 수정 및 삭제 쿼리를 실행
+    - `@Modifying(clearAutomatically = true)` 벌크성 쿼리를 실행한 뒤 영속성 컨텍스트 초기화를 하도록 한다.
+
+  - `bulk`성 쿼리의 주의사항
+    - `bulk` 연산은 영속성 컨텍스트를 무시하고 실행하기 때문에, 영속성 컨텍스트에 있는 엔티티의 상태와 DB 엔티티 상태가 달라질 수 있다.
+    - `@Modifying`를 사용하지 않는 경우 `QueryExecutionRequestException` 예외 발생
+    - 또한 영속성 컨텍스트를 초기화하지 않는 경우 해당 데이터를 다시 조회하면 영속성 컨텍스트에 값이 남아 있어 문제가 될 수 있다.
+    - 조회가 필요한 경우 영속성 컨텍스트를 필히 초기화 해야한다.
+
+  - `bulk` 연산 권장 방법
+    - 영속성 컨텍스트에 엔티티가 없는 상태에서 `bulk` 연산을 먼저 실행
+    - 영속성 컨텍스트에 엔티티가 있는 경우 `bulk` 연산 직후 영속성 컨텍스트를 초기화
+
+> @EntityGraph
+- 연관된 엔티티들을 SQL 한 번에 조회하는 방법
+  - Fetch Join과 같은 방식?
+
+- 기존 방법
+  - Hibernate5Module에 기반하여 Proxy객체를 초기화하여 값을 세팅
+  - 1:N 쿼리 조회 시 1을 먼저 조회 후 N에 대해서 지연로딩을 수행
+
+- 가장 기본적인 방식 hibernate 모듈을 통한 지연로딩 대처 방법
+  - 지연로딩 여부를 확인
+    - hibernate 메서드 사용
+      - `Hibernate.isInitialized(member.getTeam())`
+    - JPA 표준으로 확인하는 방법
+      - `em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(member.getTeam())`
+  - 결국 엔티티를 한번에 조회하기 위해서는 `Fetch Join`이 필요함
+
+- `Fetch Join`으로 지연로딩에 대처하는방법
+  - `@Query("select ... from ... join fetch ...")`
+  - 연관된 엔티티를 한 번에 조회할 수 있도록 `Fetch Join`을 사용
+  - 하지만 이는 outer join으로 조회되기 때문에 중복 데이터가 존재
+
+- `@EntityGraph`를 사용하여 지연로딩에 대처하는 방법
+  - `Fetch Join`의 `Annotation` 버전
+  - left outer join 실행
+
+- `@NamedEntityGraph` 설정을 통한 지연로딩 대처방법
+  - Entity 설정
+    - `@NamedEntityGraph(name = "Member.all", attributeNodes = @NamedAttributeNode("team"))`
+  - Repository 설정
+    - `@EntityGraph("Member.all")`
+
+> JPA Hint & Lock
+
 
 ## 확장 기능
 
