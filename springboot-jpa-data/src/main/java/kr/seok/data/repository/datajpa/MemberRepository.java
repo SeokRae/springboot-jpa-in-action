@@ -16,7 +16,7 @@ import java.util.Optional;
 
 public interface MemberRepository extends JpaRepository<Member, Long>,
         /* 데이터-JPA 에서 제공하는 방식으로 인터페이스를 상속 받으면 구현 클래스의 메서드를 호출하여 실행이 됨 */
-        MemberRepositoryCustom {
+        MemberRepositoryCustom, JpaSpecificationExecutor<Member> {
 
     List<Member> findByUsernameAndAgeGreaterThan(String username, int age);
 //    @Query(name = "Member.findByUsername")
@@ -129,4 +129,11 @@ public interface MemberRepository extends JpaRepository<Member, Long>,
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Member> findLockByUsername(String name);
+
+    List<UsernameOnly> findUsernameOnlyByUsername(@Param("username") String username);
+    /* DTO로 처리 */
+    List<UsernameOnlyDto> findUsernameDtoOnlyByUsername(@Param("username") String username);
+
+    /* 타입으로 처리 */
+    <T> List<T> findUsernameDtoTypeOnlyByUsername(@Param("username") String username, Class<T> type);
 }

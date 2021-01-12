@@ -401,8 +401,95 @@
   - Page는 map() 을 지원해서 내부 데이터를 다른 것으로 변경할 수 있다.
 
 ## 스프링 데이터 JPA 분석
+- 기본 개념
+  - `@Repository`
+    - JPA 예외를 스프링이 추상화한 예외로 변환
+  - `@Transactional`
+    - JPA의 `모든 변경`은 `트랜잭션 안`에서 동작
+    - 스프링 데이터 JPA는 `변경(등록, 수정, 삭제)` 메서드를 `트랜잭션 처리`
+    - 서비스 계층에서 트랜잭션을 시작하지 않으면 리파지토리에서 트랜잭션 시작 -> 기본적으로 `Repository`에 `@Transactional`이 걸려있음
+    - 서비스 계층에서 트랜잭션을 시작하면 리파지토리는 해당 트랜잭션을 전파 받아서 사용
+    - 그래서 스프링 데이터 JPA를 사용할 때 트랜잭션이 없어도 데이터 등록, 변경이 가능했음
+      (사실은 트랜 잭션이 리포지토리 계층에 걸려있는 것임)
+
+  - `@Transactional(readOnly = true)`
+    - 데이터를 단순히 조회만하고 변경하지 않는 트랜잭션에서 readOnly = true 옵션을 사용하면 플러 시를 생략해서 약간의 성능 향상을 얻을 수 있음
+
+- **JPA를 사용하여 데이터를 저장할 때 주의할 점**
+  - persist를 사용해야함
+  - merge는 db에 데이터가 존재하는 지 select를 한번 조회하기 때문에 비효율적임
+
+- 임의의 Id를 사용하려는 경우
+  - 기본적으로 `식별자(@Id)`가 `객체`인경우 `null`로 판단, `기본 타입`인 경우 `0`으로 판단
+  - 임의로 식별자를 채번하여 임의로 생성해야 하는 경우 -> `Persistable` 인터페이스를 사용하여 엔티티가 신규인지 여부를 판단
+  - 실무에서는 사용하는 방법
+    - 생성일자(createDate)가 존재하는 경우를 기준으로 신규 데이터인지 여부를 판단
+
+- **`Persistable`**
+  - JPA 식별자 생성 전략이 @GenerateValue 면 save() 호출 시점에 식별자가 없으므로 새로운 엔티 티로 인식해서 정상 동작
+  - JPA 식별자 생성 전략이 @Id 만 사용해서 직접 할당이면 이미 식별자 값이 있는 상태로 save() 를 호출 
+  - 이 경우 `merge()` 가 호출된다. `merge()`는 우선 DB를 호 출해서 값을 확인하고, DB에 값이 없으면 새로운 엔티티로 인지하므로 매우 비효율적임
+  - `Persistable` 를 사용해서 새로운 엔티티 확인 여부를 직접 구현하게는 효과적이다.
+  - 참고
+    - 등록시간(`@CreatedDate`)을 조합해서 사용하면 이 필드로 새로운 엔티티 여부를 편리하게 확인할 수 있다.
+      (`@CreatedDate`에 값이 없으면 새로운 엔티티로 판단)
 
 ## 나머지 기능들
+> Specifications (명세) - 유지보수가 힘든 코드
+- 실무에서는 JPA Criteria를 거의 안쓴다! 대신에 QueryDSL을 사용하자.
+- 스프링 데이터 JPA는 JPA Criteria를 활용하여 해당 개념을 사용할 수 있도록 `Specification`클래스를 지원
+- 동적 쿼리를 대처하기 위한 방법으로 사용
+
+- 술어(predicate)
+  - 참 또는 거짓으로 평가
+  - AND OR 같은 연산자로 조합해서 다양한 검색조건을 쉽게 생성(컴포지트 패턴)
+  - 예) 검색 조건 하나하나
+  - 스프링 데이터 JPA는 `org.springframework.data.jpa.domain.Specification` 클래스로 정의
+
+- 명시 기능 사용방법
+  - `Repository`에 `JpaSpecificationExecutor<Member>` 상속
+  - 조회 쿼리 메서드에 `Specification` 파라미터로 받아 검색 조건으로 사용
+  - 검색 조건에 대한 Spec을 미리 정의 해두어야 함
+
+> [QueryBy](https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#query-by-example)
+- 사용 방식
+  - Probe: 필드에 데이터가 있는 실제 도메인 객체
+  - ExampleMatcher: 특정 필드를 일치시키는 상세한 정보 제공, 재사용 가능 
+  - Example: `Probe`와 `ExampleMatcher`로 구성, 쿼리를 생성하는데 사용
+  
+- 장점
+  - 동적 쿼리를 편하게 처리하는 방법
+  - 도메인 객체를 그대로 사용하는 것이 큰 장점
+  - 데이터 저장소를 RDB에서 NOSQL로 변경해도 코드 변경이 없게 추상화 되어 있음 (spring data 패키지 내에 존재하기 때문) 
+  - 스프링 데이터 JPA `JpaRepository` 인터페이스에 이미 포함
+
+- 단점
+  - 조인은 가능하나 내부 조인만 가능 ( outer join에서 제약 )
+  - 중첩 제약조건 쿼리에 제한
+  - 매칭 조건이 단순한 것만 가능 (정확하게 매칭되는 것만 가능)
+
+- 정리
+  - 좋은 기술처럼 보이지만 쿼리의 중요한 기능 들을 제공하지 않아 사용을 해야하는 선택을 해야할지에 대해서 생각해야 한다.
+
+> [Projections](https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#projections)
+- 복잡한 쿼리를 해결하기에는 한계가 있다. 실무에서는 단순할 때만 사용하고, 조금만 복잡해지면 QueryDSL을 사용하자
+- 사용 용도
+  - 엔티티 대신에 DTO를 편리하게 조회할 때 사용
+  - 전체 엔티티가 아니라 만약 회원 이름만 딱 조회하고 싶은경우
+
+- 주의사항
+  - 프로젝션 대상이 root 엔티티인 경우, JPQL SELECT 절 최적화가 가능하다.
+  - 프로젝션 대상이 root가 아닌경우 
+    - left outer join 처리하기 때문에 모든 필드를 select 해서 엔티티로 조회한 다음에 계산
+    - 최적화가 하기 힘듬
+  
+- 정리
+  - 프로젝션 대상이 ROOT 엔티티인 경우 유용
+  - 프로젝션 대상이 ROOT 엔티티를 넘어가면 JPQL SELECT 최적화기 되지 않는다.
+  - 실무의 복잡한 쿼리를 해결하기에 한계가 있다.
+
+> Native Query
+
 
 ## 참고
 - [리포지토리 분리](https://www.inflearn.com/questions/101103)

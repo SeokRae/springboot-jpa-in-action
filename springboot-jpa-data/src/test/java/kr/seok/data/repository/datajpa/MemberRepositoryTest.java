@@ -3,6 +3,9 @@ package kr.seok.data.repository.datajpa;
 import kr.seok.data.domain.Member;
 import kr.seok.data.domain.Team;
 import kr.seok.data.domain.dto.MemberDto;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +41,9 @@ class MemberRepositoryTest {
     @Autowired
     private TeamRepository teamRepository;
 
+    @PersistenceContext
+    private EntityManager em;
+
     @Test
     @DisplayName("Spring-Data-JPA 기반 코드: Member 객체 확인")
     void testMember() {
@@ -53,6 +60,7 @@ class MemberRepositoryTest {
     }
 
     @Test
+    @Transactional
     public void basicCRUD() {
         Member member1 = new Member("member1");
         Member member2 = new Member("member2");
@@ -329,9 +337,6 @@ class MemberRepositoryTest {
         assertThat(resultCount).isEqualTo(3);
     }
 
-    @PersistenceContext
-    EntityManager em;
-
     @Test
     @DisplayName("영속성 초기화를 하지 않고 bulk 업데이트하는 경우, 영속성 초기화로 DB에서 조회하여 bulk 연산 적용된것 확인 테스트")
     public void bulkErrorUpdate() {
@@ -363,6 +368,7 @@ class MemberRepositoryTest {
     }
 
     @Test
+    @DisplayName("EnittyGraph 없으면 지연로딩으로 조회, 있으면 Fetch Join으로 조회")
     public void findMemberLazy() throws Exception {
         //member1 -> teamA
         //member2 -> teamB
@@ -396,6 +402,7 @@ class MemberRepositoryTest {
     }
 
     @Test
+    @DisplayName("Fetch Join 방식으로 조회하는 방법 -> 조회된 클래스 확인하면 프록시 클래스가 아니라 엔티티 값으로 나옴")
     public void findMemberLazyFetchJoin() throws Exception {
         //member1 -> teamA
         //member2 -> teamB
@@ -439,9 +446,11 @@ class MemberRepositoryTest {
             System.out.println("member -> " + member.getTeam().getClass());
             System.out.println("member -> " + member.getTeam().getName());
         });
+        em.clear();
     }
 
     @Test
+    @DisplayName("JPA 힌트(변경감지 무시) 적용 테스트")
     public void queryHint() {
         //given
         memberRepository.save(new Member("member1", 10));
@@ -454,12 +463,159 @@ class MemberRepositoryTest {
         member.setUsername("member2");
 
         em.flush(); //Update Query 실행X
-
     }
 
     /* repository는 유지한 상태로 custom 인터페이스를 붙여 유지보수에 좋음 */
     @Test
+    @DisplayName("Custom Repository 적용 확인 테스트")
     public void callCustom() {
         memberRepository.findMemberCustom();
     }
+
+    @Test
+    @DisplayName("정의된 Spec으로 동적 쿼리 작성하는 테스트")
+    public void specBasic() throws Exception {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+        Member m1 = new Member("m1", 0, teamA);
+        Member m2 = new Member("m2", 0, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+        //when
+        /* Spec을 정의 */
+        Specification<Member> spec = MemberSpec.username("m1")
+                .and(MemberSpec.teamName("teamA"));
+
+        List<Member> result = memberRepository.findAll(spec);
+        //then
+        Assertions.assertThat(result.size()).isEqualTo(1);
+    }
+
+
+    @Test
+    @DisplayName("Projections 를 사용하여 하나의 필드를 조회 하는 방식")
+    public void projectionsTest() throws Exception {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+        Member m1 = new Member("m1", 30, teamA);
+        Member m2 = new Member("m2", 20, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        /*
+                select
+                    member0_.username as col_0_0_
+                from
+                    member member0_
+                where
+                    member0_.username=?
+         */
+        List<UsernameOnly> username = memberRepository.findUsernameOnlyByUsername("m1");
+        /*
+            org.springframework.data.jpa.repository.query.AbstractJpaQuery$TupleConverter$TupleBackedMap@697a0948
+            구현체까지 만들어 설정한다는 것을 확인
+         */
+        username.forEach(member -> System.out.println("member -> " + member.getUsername()));
+    }
+
+    @Test
+    @DisplayName("Projections 를 사용하여 하나의 필드를 조회 하는 방식 (DTO) ")
+    public void projectionsDtoTest() throws Exception {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+        Member m1 = new Member("m1", 30, teamA);
+        Member m2 = new Member("m2", 20, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        /*
+                select
+                    member0_.username as col_0_0_
+                from
+                    member member0_
+                where
+                    member0_.username=?
+         */
+        List<UsernameOnlyDto> username = memberRepository.findUsernameDtoOnlyByUsername("m1");
+        username.forEach(member -> System.out.println("member -> " + member.getUsername()));
+    }
+
+    @Test
+    @DisplayName("Projections 를 사용하여 하나의 필드를 조회 하는 방식 (DTO & Type) ")
+    public void projectionsDtoTypeTest() throws Exception {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+        Member m1 = new Member("m1", 30, teamA);
+        Member m2 = new Member("m2", 20, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        /*
+                select
+                    member0_.username as col_0_0_
+                from
+                    member member0_
+                where
+                    member0_.username=?
+         */
+        List<UsernameOnlyDto> username = memberRepository.findUsernameDtoTypeOnlyByUsername("m1", UsernameOnlyDto.class);
+        username.forEach(member -> System.out.println("member -> " + member.getUsername()));
+    }
+
+    @Test
+    @DisplayName("Projections 를 사용하여 하나의 필드를 조회 하는 방식 (DTO & Type) ")
+    public void projectionsMemberNTeamTest() throws Exception {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+        Member m1 = new Member("m1", 30, teamA);
+        Member m2 = new Member("m2", 20, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        /*
+            select
+                member0_.username as col_0_0_,
+                team1_.team_id as col_1_0_,
+                team1_.team_id as team_id1_2_,
+                team1_.name as name2_2_
+            from
+                member member0_
+            left outer join
+                team team1_
+                    on member0_.team_id=team1_.team_id
+            where
+                member0_.username=?
+
+            Memberd의 field 는 하나만 잘 가져오는데 Team은 다가져옴
+         */
+        List<NestedClosedProjection> username = memberRepository.findUsernameDtoTypeOnlyByUsername("m1", NestedClosedProjection.class);
+        /* Nested 는 조회 방식이 좋아 보이긴 하지만 조인에서 문제가 있음 */
+        username.forEach(member -> {
+            System.out.println("member -> " + member.getUsername());
+            System.out.println("member -> " + member.getTeam().getName());
+
+        });
+    }
+
+
 }
