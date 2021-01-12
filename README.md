@@ -55,14 +55,52 @@
   - 각 방식마다 장단점이 분명하게 차이가 있기때문에 현재 상황이 어떤지 확인하고 맞춰서 사용할 것
 
 ## [Spring-Data-Jpa](/springboot-jpa-data/README.md)
-- JPA 코드를 Spring data Jpa로 개선
-  - 메서드 이름으로 쿼리 생성
-  - Jpa `@NamedQuery`
-  - `@Query`를 활용한 쿼리 정의
-  - 페이징
-  - Bulk 수정 쿼리
-  - `@EntityGraph`
-  - JPA Hint
+- JPA 기반 & 스프링 데이터 JPA 기반
+  - 쿼리 메서드 기능 확인
+    - [x] 메서드 이름으로 쿼리 생성
+      - 정말 간단한 조회시 사용
+    - [x] NamedQuery
+      - 잘 안씀
+    - [x] @Query
+       - JPQL 사용하기 위한 방법 
+    - [x] Paging
+        - `Pageable`, `PageRequest`
+    - [x] Bulk
+        - `@Modifying(clearAutomatically = true)`
+    - [x] `@EntityGraph`
+      - 간단한 fetch join 사용시 `@EntityGraph`
+      - 복잡한 쿼리 사용 시 JPQL의 `Fetch Join` 사용
+  - [x] 커스텀 인터페이스
+    - 쿼리의 용도에 따라 인터페이스를 구분 (코어 비즈니스 쿼리, view 조회 쿼리)
+    - QueryDSL, JdbcTemplate구분
+  - [x] Auditing
+    - time, by를 구분하여 클래스관리
+    - time은 어떤 곳에서든지 필수일 수 있지만 by는 선택사항일 수 있음
+  - [x] 도메인 클래스 컨버터 권장하지 않음
+  - [x] 페이징
+    - `Pageable`로 response의 규격을 고정시킬 수 있다.
+    - 사용자 정의 `PageRequest`를 작성하여 page 시작 인덱스를 1로 할 수 있도록 하는 것이 필요할 듯
+    - `글로벌` 설정으로 기본 값을 잡고 필요한 곳에서 `@PageableDefault` 사용
+    - 페이징도 결국 Entity에서 DTO로 변환하는 것이 필요
+
+- [x] 스프링 데이터 JPA 분석
+  - `@Transactional`에 대한 차이 구분하기
+    - JPA: 모든 변경이 트랜잭션 안에서 수행
+    - 스프링 데이터 JPA: 변경(등록, 수정 삭제) 메서드가 트랜잭션안에서 수행
+  - `save`의 차이
+    - 신규 데이터 `persist()`
+    - 기존 데이터가 존재하는 경우 `merge()`
+      - `merge()`는 select 이후에 값을 변경하는 기본 프로세스를 인지 할 것
+  - Entity를 사용할 때 Id 관리를 어떻게 할 것인가에 따라 `Persistable` 인터페이스 사용 
+
+- [x] 그 외 기능
+  - `Specifications`: 복잡함
+  - `Query By`: outer join에 대해서 제약이 있음
+  - `projections`: Native Query의 대체가 될 수 있으나 데이터 조회 최적화에서 신경써야할 부분이 있음
+  - `Native Qeury`: 이거 쓸바엔 JdbcTemplate 사용, 아니면 MyBatis
+
+- 결론
+  - QueryDSL 공부해라
 
 ## 단축키 꿀팁 모음
 - 단축키 shift + command + c

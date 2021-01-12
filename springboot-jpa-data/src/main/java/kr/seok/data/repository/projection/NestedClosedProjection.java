@@ -1,4 +1,4 @@
-package kr.seok.data.repository.datajpa;
+package kr.seok.data.repository.projection;
 
 public interface NestedClosedProjection {
     String getUsername();

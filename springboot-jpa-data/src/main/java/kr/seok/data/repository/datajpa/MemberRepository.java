@@ -2,6 +2,8 @@ package kr.seok.data.repository.datajpa;
 
 import kr.seok.data.domain.Member;
 import kr.seok.data.domain.dto.MemberDto;
+import kr.seok.data.repository.custom.MemberRepositoryCustom;
+import kr.seok.data.repository.projection.MemberProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -66,7 +68,7 @@ public interface MemberRepository extends JpaRepository<Member, Long>,
     @Query("select m from Member m left join fetch m.team")
     List<Member> findMemberFetchJoin();
 
-    // #################################################################
+    // EntityGraph (fetch join의 간소화 모드) #################################################################
     @Override
     /* JPQL 대신 설정으로 fetch join 효과를 보는 방법 */
     @EntityGraph(attributePaths = {"team"})
@@ -130,20 +132,23 @@ public interface MemberRepository extends JpaRepository<Member, Long>,
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Member> findLockByUsername(String name);
 
+    // Projections ########################################################
+    /* 단일 필드 조회 projection, open projection 두 가지 방법 테스트 */
     List<UsernameOnly> findUsernameOnlyByUsername(@Param("username") String username);
-    /* DTO로 처리 */
+    /* class 타입 dto로 생성한 projection */
     List<UsernameOnlyDto> findUsernameDtoOnlyByUsername(@Param("username") String username);
-
-    /* 타입으로 처리 */
+    /* Type으로 범용성있게 처리하는 방법 */
     <T> List<T> findUsernameDtoTypeOnlyByUsername(@Param("username") String username, Class<T> type);
 
 
+    // Native Query ########################################################
     @Query(value = "select * from member where username = ?"
             , nativeQuery = true)
     Member findByNativeQuery(String username);
 
     @Query(value =
             "select m.member_id as id, m.username, t.name as teamName from member m left join team t",
+            /* 페이징 쿼리 구분 가능 */
             countQuery = "SELECT count(*) from member",
             nativeQuery = true
     )

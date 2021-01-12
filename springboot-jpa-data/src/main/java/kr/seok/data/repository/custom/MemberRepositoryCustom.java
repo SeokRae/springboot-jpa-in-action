@@ -1,4 +1,4 @@
-package kr.seok.data.repository.datajpa;
+package kr.seok.data.repository.custom;
 
 import kr.seok.data.domain.Member;
 
