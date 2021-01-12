@@ -1,8 +1,10 @@
 package kr.seok.data.domain;
 
+import kr.seok.data.domain.base.BaseEntity;
 import lombok.*;
 
 import javax.persistence.*;
+import java.io.Serializable;
 
 @Entity
 @Getter @Setter
@@ -13,7 +15,7 @@ import javax.persistence.*;
         query="select m from Member m where m.username = :username"
 )
 @NamedEntityGraph(name = "Member.all", attributeNodes = @NamedAttributeNode("team"))
-public class Member {
+public class Member extends BaseEntity implements Serializable {
 
     @Id @GeneratedValue
     @Column(name = "member_id")

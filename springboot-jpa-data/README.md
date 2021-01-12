@@ -212,7 +212,7 @@
     - 영속성 컨텍스트에 엔티티가 없는 상태에서 `bulk` 연산을 먼저 실행
     - 영속성 컨텍스트에 엔티티가 있는 경우 `bulk` 연산 직후 영속성 컨텍스트를 초기화
 
-> @EntityGraph
+> @EntityGraph (`Fetch Join`의 간소화 버전)
 - 연관된 엔티티들을 SQL 한 번에 조회하는 방법
   - Fetch Join과 같은 방식?
 
@@ -247,7 +247,7 @@
   - 간단한 fetch join이 필요한 부분에서는 `@EntityGraph`
   - 조금 복잡해지면 JPQL `fetch join`을 활용
 
-> JPA Hint & Lock
+> JPA Hint & Lock (사용하려는 경우 깊은 이해가 필요)
 - database의 hint가 아님
 - 데이터를 오직 조회하는 기능에 dirty check 기능을 비활성화 하도록 하는 설정
 - 기본적으로 데이터를 저장하고 영속성 컨텍스트를 비운 뒤, 데이터를 새로 조회했을 때 db의 데이터를 조회 해 1차 캐시에 데이터를 저장하고 그 상태를 감지하게 되는데 
@@ -256,7 +256,7 @@
 
 
 ## 확장 기능
-> 사용자 정의 인터페이스
+> 사용자 정의 인터페이스 (실무에서 많이 씀)
 - 기본 프로세스
   - 스프링 데이터 JPA 리포지토리는 인터페이스만 정의하고 구현체는 스프링이 자동 생성
   
@@ -295,15 +295,110 @@
     - `@PreUpdate`, `@PostUpdate`
   
   - 스프링 데이터 JPA 기반 관리 방법
-    - `@EnableJpaAuditing` 스프링 부트 설정 클래스에 적용
-    - `@EntityListeners(AuditingEntityListener.class)` 엔티티에 적용
+    - `@EnableJpaAuditing` [스프링 부트 설정 클래스](src/test/java/kr/seok/JpaApplicationTest.java)에 적용
+    - `@EntityListeners(AuditingEntityListener.class)` [엔티티](src/main/java/kr/seok/data/domain/base/JpaBaseEntity.java)에 적용
     - `@CreatedDate` 엔티티 최초 등록일 
     - `@LastModifiedDate` 엔티티 최종 수정일
     - `@CreatedBy` 엔티티 최초 등록자
     - `@LastModifiedBy` 엔티티 최종 수정자
 
 - 실무에서 사용하는 방법
+  - 기본적으로 Entity의 이력 정보를 확인하기 위해서는 무조건 필요한 필드
+  - 다만 등록일, 수정일은 어떤 엔티티든 필수인데 등록자, 수정자의 경우 필요하지 않은 경우가 존재하기 때문에 분리하여 사용
+  - [`BaseEntity`](src/main/java/kr/seok/data/domain/base/BaseEntity.java), [`BaseTimeEntity`](src/main/java/kr/seok/data/domain/base/BaseTimeEntity.java) 클래스로 구분하여 필요한 엔티티에서 사용
+  - JPA의 이벤트를 스프링 데이터가 제공해주기 때문에 도메인 코드를 줄일 수 있다.
 
+- `@EntityListeners(AuditingEntityListener.class)`를 설정하지 않고 글로벌로 설정하는 방법
+  - META-INF/orm.xml
+  ```xml
+  <?xml version=“1.0” encoding="UTF-8”?>
+      <entity-mappings xmlns=“http://xmlns.jcp.org/xml/ns/persistence/orm”
+                       xmlns:xsi=“http://www.w3.org/2001/XMLSchema-instance”
+                       xsi:schemaLocation=“http://xmlns.jcp.org/xml/ns/persistence/
+      orm http://xmlns.jcp.org/xml/ns/persistence/orm_2_2.xsd”
+                       version=“2.2">
+          <persistence-unit-metadata>
+              <persistence-unit-defaults>
+                  <entity-listeners>
+                      <entity-listener
+      class="org.springframework.data.jpa.domain.support.AuditingEntityListener”/>
+                  </entity-listeners>
+              </persistence-unit-defaults>
+          </persistence-unit-metadata>
+      </entity-mappings>
+  ```
+
+> Web 확장 - 도메인 클래스 컨버터 (잘 안씀)
+- HTTP 파라미터로 넘어온 엔티티의 아이디로 엔티티 객체를 찾아서 바인딩
+- Http 기본 동작
+  - view에서 controller로 넘어온 파라미터 값을 통해 repository에 파라미터 값을 넘겨 데이터를 조회
+- 도메인 클래스 컨버트를 사용하는 경우 동작
+  - 파라미터로 엔티티를 받되 PathVariable로 설정된 파라미터를 해당 엔티티에서 가져와 엔티티의 Repository를 통해 데이터를 조회
+  - Repository 로직을 skip할 수 있으나 트랜잭션이 없는 범위에서 엔티티를 조회 하므로 엔티티를 변경했을 때 DB에 반영이 되지 않는다.
+
+- 두 방식의 차이점
+  - HTTP 요청은 회원 id를 받지만 도메인 클래스 컨버터가 중간에 동작해서 회원 엔티티 객체를 반환
+  - 도메인 클래스 컨버터도 리파지토리를 사용해서 엔티티를 찾음
+
+- 주의사항
+  - 도메인 클래스 컨버터로 엔티티를 파라미터로 받으면, 이 엔티티는 단순 조회용으로만 사용해야 한다. 
+  - (트랜잭션이 없는 범위에서 엔티티를 조회했으므로, 엔티티를 변경해도 DB에 반영되지 않는다.)
+
+> Web 확장 - 페이징과 정렬
+- 페이징관련 인터페이스 & 클래스
+  - `Pageable` 인터페이스
+  - `PageRequest` 실제 사용 객체
+
+- 페이징 사용법
+  ```http request
+  /members?page=0&size=3&sort=id,desc&sort=username,desc
+  ```
+  - page: 현재 페이지, `0`부터 시작한다.
+  - size: 한 페이지에 노출할 데이터 건수
+  - sort: 정렬 조건을 정의한다. 
+    - 예) 정렬 속성, 정렬 속성...(ASC | DESC), 정렬 방향을 변경하고 싶으면 sort 파라미터 추가 ( asc 생략 가능)
+
+- 페이징 설정
+  - 글로벌 설정
+    ```yml
+    spring.data.web.pageable.default-page-size=20 /# 기본 페이지 사이즈/ 
+    spring.data.web.pageable.max-page-size=2000 /# 최대 페이지 사이즈/
+    ```
+  - 개별 설정
+    - `@PageableDefault` 어노테이션을 사용
+    ```java
+        @PageableDefault(size = 12, sort = “username”, direction = Sort.Direction.DESC) Pageable pageable
+    ```
+  - 페이징 정보가 둘 이상인 경우 설정 방법
+    - 페이징 정보가 둘 이상이면 접두사로 구분
+    - `@Qualifier` 에 접두사명 추가 "{접두사명}_xxx”
+    - 요청 쿼리스트링
+      ```http request
+      /members?member_page=0&order_page=1
+      ```
+    - 컨트롤러 파라미터 설정
+      ```java
+      class MemberController {
+          public String list(
+                  @Qualifier("member") Pageable memberPageable,
+                  @Qualifier("order") Pageable orderPageable, ...) {
+                  // ...
+          }
+      }
+      ```
+
+  - Paging 커스텀
+    - Page의 기본 값이 0인 것을 1부터 시작하는 방법
+      - `Pageable`, `Page`를 파리미터와 응답 값으로 사용히자 않고, 직접 클래스를 만들어서 처리
+      - spring.data.web.pageable.one-indexed-parameters 를 true 로 설정
+        - 이 방법은 web에서 page 파라미터를 -1 처리 할 뿐, 응답 값 `Page`에는 0으로 되어 있음
+        - 반환하는 pageable 객체의 응답값이 의도한 값으로 반환되지 않음
+
+
+- 페이징 결과값 반환
+  - 엔티티를 API로 노출하면 다양한 문제가 발생
+  - 엔티티를 꼭 DTO로 변환해서 반환해야 한다.
+  - Page는 map() 을 지원해서 내부 데이터를 다른 것으로 변경할 수 있다.
 
 ## 스프링 데이터 JPA 분석
 

@@ -1,6 +1,8 @@
 package kr.seok.data.domain;
 
+import kr.seok.data.repository.datajpa.MemberRepository;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,6 +11,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.util.List;
 
+@Transactional
 @SpringBootTest
 class MemberTest {
 
@@ -16,7 +19,6 @@ class MemberTest {
     EntityManager em;
 
     @Test
-    @Transactional
     @Rollback(false)
     public void testEntity() {
         Team teamA = new Team("teamA");
@@ -51,5 +53,34 @@ class MemberTest {
             System.out.println("member=" + member);
             System.out.println("-> member.team=" + member.getTeam());
         }
+    }
+
+    @Autowired
+    MemberRepository memberRepository;
+
+    /*  Jpa에서 제공하는 이벤트를 이용하는 방법 */
+    @Test
+    public void JpaEventBaseEntity() throws Exception {
+        //given
+        Member member = new Member("member1");
+        /* create 이벤트가 수행되는 시점 확인 */
+        memberRepository.save(member); // @PrePersist
+
+        Thread.sleep(100);
+        member.setUsername("member2");
+
+        /* update 이벤트가 수행되는 시점 확인 */
+        em.flush(); // @PreUpdate
+        em.clear();
+
+        //when
+        Member findMember = memberRepository.findById(member.getId()).get();
+
+        //then
+        System.out.println("findMember.createdDate = " + findMember.getCreatedDate());
+        System.out.println("findMember.createdBy = " + findMember.getCreatedBy());
+//        System.out.println("findMember.updatedDate = " + findMember.getUpdatedDate());
+        System.out.println("findMember.lastModifiedDate = " + findMember.getLastModifiedDate());
+        System.out.println("findMember.lastModifiedBy = " + findMember.getLastModifiedBy());
     }
 }
