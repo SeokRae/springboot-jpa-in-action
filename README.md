@@ -102,6 +102,8 @@
 - 결론
   - QueryDSL 공부해라
 
+## [Query DSL](springboot-jpa-querydsl/README.md)
+
 ## 단축키 꿀팁 모음
 - 단축키 shift + command + c
     - 해당 폴더 경로 복사: 터미널에 복사해서 빠르게 이동

@@ -123,3 +123,9 @@ project(":springboot-jpa-data") {
         useJUnitPlatform()
     }
 }
+
+project(":springboot-jpa-querydsl") {
+    dependencies {
+
+    }
+}
