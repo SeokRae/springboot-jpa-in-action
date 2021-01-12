@@ -192,14 +192,18 @@
 
 > 벌크성 수정 쿼리
 - Jpa 기반 bulk 수정 쿼리
+  - `executeUpdate()`으로 호출 
+  - 영속성 컨텍스트를 초기화 `EntityManager.clear()`
 
 - 스프링 데이터 JPA 기반 bulk 수정 쿼리
   - `bulk`성 쿼리 설정
-    - `@Modifying`을 사용하여 bulk 성 수정 및 삭제 쿼리를 실행
+    - `@Modifying`을 사용하여 bulk 성 수정 및 삭제 쿼리를 실행하게 하는 어노테이션
+      - 해당 어노테이션이 설정되어야 `executeUpdate()` 메서드로 실행이 됨
+      - 해당 어노테이션이 없으면 예외를 발생시킴
     - `@Modifying(clearAutomatically = true)` 벌크성 쿼리를 실행한 뒤 영속성 컨텍스트 초기화를 하도록 한다.
 
   - `bulk`성 쿼리의 주의사항
-    - `bulk` 연산은 영속성 컨텍스트를 무시하고 실행하기 때문에, 영속성 컨텍스트에 있는 엔티티의 상태와 DB 엔티티 상태가 달라질 수 있다.
+    - `bulk` 연산은 영속성 컨텍스트를 무시하고 DB에 직접 실행하기 때문에, **영속성 컨텍스트에 있는 엔티티의 상태와 DB 엔티티 상태가 달라질 수 있다.**
     - `@Modifying`를 사용하지 않는 경우 `QueryExecutionRequestException` 예외 발생
     - 또한 영속성 컨텍스트를 초기화하지 않는 경우 해당 데이터를 다시 조회하면 영속성 컨텍스트에 값이 남아 있어 문제가 될 수 있다.
     - 조회가 필요한 경우 영속성 컨텍스트를 필히 초기화 해야한다.
@@ -216,7 +220,7 @@
   - Hibernate5Module에 기반하여 Proxy객체를 초기화하여 값을 세팅
   - 1:N 쿼리 조회 시 1을 먼저 조회 후 N에 대해서 지연로딩을 수행
 
-- 가장 기본적인 방식 hibernate 모듈을 통한 지연로딩 대처 방법
+- 가장 기본적인 방식 hibernate 모듈을 통한 지연로딩 대처 방법 (강의에 없는 내용)
   - 지연로딩 여부를 확인
     - hibernate 메서드 사용
       - `Hibernate.isInitialized(member.getTeam())`
@@ -239,10 +243,20 @@
   - Repository 설정
     - `@EntityGraph("Member.all")`
 
+- 정리
+  - 간단한 fetch join이 필요한 부분에서는 `@EntityGraph`
+  - 조금 복잡해지면 JPQL `fetch join`을 활용
+
 > JPA Hint & Lock
+- database의 hint가 아님
+- 데이터를 오직 조회하는 기능에 dirty check 기능을 비활성화 하도록 하는 설정
+- 기본적으로 데이터를 저장하고 영속성 컨텍스트를 비운 뒤, 데이터를 새로 조회했을 때 db의 데이터를 조회 해 1차 캐시에 데이터를 저장하고 그 상태를 감지하게 되는데 
+  단순히 조회만 하는 기능에서는 해당 작업이 비효율적이게 된다. 해당 기능을 통해 dirty checking을 하지 않도록하여 효율적으로 관리 하는 방법
+- 반환 타입을 Page 인터페이스로 사용하는 경우에도 페이징을 위한 count 쿼리에도 힌트 적용 가능
 
 
 ## 확장 기능
+> 사용자 정의 인터페이스
 
 ## 스프링 데이터 JPA 분석
 

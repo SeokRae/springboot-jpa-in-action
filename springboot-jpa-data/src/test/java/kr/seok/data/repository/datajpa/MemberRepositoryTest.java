@@ -15,6 +15,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -309,7 +311,6 @@ class MemberRepositoryTest {
         assertThat(map.getTotalPages()).isEqualTo(2); //전체 페이지 번호
         assertThat(map.isFirst()).isTrue(); //첫번째 항목인가?
         assertThat(map.hasNext()).isTrue(); //다음 페이지가 있는가?
-
     }
 
     @Test
@@ -326,5 +327,133 @@ class MemberRepositoryTest {
         int resultCount = memberRepository.bulkAgePlus(20);
         //then
         assertThat(resultCount).isEqualTo(3);
+    }
+
+    @PersistenceContext
+    EntityManager em;
+
+    @Test
+    @DisplayName("영속성 초기화를 하지 않고 bulk 업데이트하는 경우, 영속성 초기화로 DB에서 조회하여 bulk 연산 적용된것 확인 테스트")
+    public void bulkErrorUpdate() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 19));
+        memberRepository.save(new Member("member3", 20));
+        memberRepository.save(new Member("member4", 21));
+        memberRepository.save(new Member("member5", 40));
+
+        //when
+        /* 영속성 컨텍스트를 초기화하지 않은 bulk 연산 메서드 */
+        int resultCount = memberRepository.bulkAgeErrPlus(20);
+
+
+        List<Member> member5 = memberRepository.findByUsername("member5");
+        /* bulk 연산을 했음에도 DB와 연속성에 있는 데이터가 다른 내용 확인 */
+        assertThat(member5.get(0).getAge()).isEqualTo(40);
+
+        /* 영속성 컨텍스트를 비워 DB에서 조회가 될 수 있도록 함 */
+        em.clear();
+
+        /* 영속성 컨텍스트에 있던 데이터가 아니라 DB에서 새로 꺼내 bulk 연산이 적용된 데이터 확인 */
+        List<Member> memberFlush = memberRepository.findByUsername("member5");
+        assertThat(memberFlush.get(0).getAge()).isEqualTo(41);
+
+        //then
+        assertThat(resultCount).isEqualTo(3);
+    }
+
+    @Test
+    public void findMemberLazy() throws Exception {
+        //member1 -> teamA
+        //member2 -> teamB
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+
+        memberRepository.save(new Member("member1", 10, teamA));
+        memberRepository.save(new Member("member2", 20, teamB));
+
+        /* DB 반영 */
+        em.flush();
+        /* 영속성 컨텍스트 clear */
+        em.clear();
+
+        //when
+        /* 한 번의 조회로 member를 모두 조회 */
+        List<Member> members = memberRepository.findAll();
+        //then
+        members.forEach(member -> {
+            /*
+                kr.seok.data.domain.Team$HibernateProxy$6aGAMZdv 프록시 초기화:
+                실제 데이터베이스에 쿼리를 날려 데이터를 조회
+                N + 1 문제라고 칭함
+             */
+            System.out.println("member -> " + member.getTeam().getClass());
+            System.out.println("member -> " + member.getTeam().getName());
+        });
+    }
+
+    @Test
+    public void findMemberLazyFetchJoin() throws Exception {
+        //member1 -> teamA
+        //member2 -> teamB
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+
+        memberRepository.save(new Member("member1", 10, teamA));
+        memberRepository.save(new Member("member2", 20, teamB));
+
+        /* DB 반영 */
+        em.flush();
+        /* 영속성 컨텍스트 clear */
+        em.clear();
+
+        //when
+        /*
+         * 연관관계가 있는 엔티티를 한 번에 모두 조회
+         *
+         *     select
+         *         member0_.member_id as member_i1_0_0_,
+         *         team1_.team_id as team_id1_1_1_,
+         *         member0_.age as age2_0_0_,
+         *         member0_.team_id as team_id4_0_0_,
+         *         member0_.username as username3_0_0_,
+         *         team1_.name as name2_1_1_
+         *     from
+         *         member member0_
+         *     left outer join
+         *         team team1_
+         *             on member0_.team_id=team1_.team_id
+         */
+        List<Member> members = memberRepository.findMemberFetchJoin();
+        //then
+        members.forEach(member -> {
+            /*
+                프록시 초기화가 아닌 Team 엔티티가 조회되어 프록시로 초기화 작업을 하지 않음
+             */
+            System.out.println("member -> " + member.getTeam().getClass());
+            System.out.println("member -> " + member.getTeam().getName());
+        });
+    }
+
+    @Test
+    public void queryHint() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        em.flush(); /* db에 쿼리 호출 및 sync 맞추기 */
+        em.clear(); /* 영속성 컨텍스트를 비우기 */
+
+        //when
+        Member member = memberRepository.findReadOnlyByUsername("member1");
+        /* 기본적으로는 dirty checking 기능으로 변경사항을 감지하여 update 쿼리 호출 */
+        member.setUsername("member2");
+
+        em.flush(); //Update Query 실행X
+
     }
 }
