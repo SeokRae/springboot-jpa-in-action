@@ -257,8 +257,57 @@
 
 ## 확장 기능
 > 사용자 정의 인터페이스
+- 기본 프로세스
+  - 스프링 데이터 JPA 리포지토리는 인터페이스만 정의하고 구현체는 스프링이 자동 생성
+  
+- Custom 인터페이스 구현 선택 사항
+  - JPA 직접 사용( EntityManager ) 
+  - 스프링 JDBC Template 사용 
+  - MyBatis 사용
+  - 데이터베이스 커넥션 직접 사용 등등... 
+  - Querydsl 사용
+
+- 실무에서는 주로 QueryDSL이나 SpringJdbcTemplate을 함께 사용할 때 사용자 정의 리포지토리 기능을 사용한다.
+- [MemberQueryRepository](src/main/java/kr/seok/data/repository/datajpa/MemberQueryRepository.java) 를 인터페이스가 아닌 클래스로 만들고 스프링 빈으로 등록하여 직접 사용해도 된다. (이때 스프링 데이터 JPA와는 관계 없이 별도로 동작한다.)
+
+- 스프링 데이터 2.x 버전 사용방식
+  - 사용자 정의 구현 클래스에 `리포지토리 인터페이스 이름 + Impl` 을 적용하는 대신 `사용자 정의 인터페이스 명 + Impl` 방식도 지원
+  - `MemberRepository`Impl -> `MemberRepositoryCustom`Impl으로도 적용 가능
+  ```java
+  /* 이전 방식 */
+  class MemberRepositoryImpl implements MemberRepositoryCustom {
+    // ...
+  }
+  /* spring data 2.x 이상 방식 */
+  class MemberRepositoryCustomImpl implements MemberRepositoryCustom {
+    // ...
+  }
+  ```
+
+- 정리
+  - Custom으로 추가되는 기능들이 핵심 비즈니스인지 화면에 출력되는 내용인지 확실히 분류하여 클래스별로 설계할 수 있는 능력이 필요
+
+> Auditing
+- 엔티티 생성, 변경의 작성자 및 시간을 관리하는 방식
+  - JPA 기반 관리 방법
+    - `@MappedSuperclass`
+    - `@PrePersist`, `@PostPersist`
+    - `@PreUpdate`, `@PostUpdate`
+  
+  - 스프링 데이터 JPA 기반 관리 방법
+    - `@EnableJpaAuditing` 스프링 부트 설정 클래스에 적용
+    - `@EntityListeners(AuditingEntityListener.class)` 엔티티에 적용
+    - `@CreatedDate` 엔티티 최초 등록일 
+    - `@LastModifiedDate` 엔티티 최종 수정일
+    - `@CreatedBy` 엔티티 최초 등록자
+    - `@LastModifiedBy` 엔티티 최종 수정자
+
+- 실무에서 사용하는 방법
+
 
 ## 스프링 데이터 JPA 분석
 
 ## 나머지 기능들
 
+## 참고
+- [리포지토리 분리](https://www.inflearn.com/questions/101103)

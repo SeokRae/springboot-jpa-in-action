@@ -456,4 +456,10 @@ class MemberRepositoryTest {
         em.flush(); //Update Query 실행X
 
     }
+
+    /* repository는 유지한 상태로 custom 인터페이스를 붙여 유지보수에 좋음 */
+    @Test
+    public void callCustom() {
+        memberRepository.findMemberCustom();
+    }
 }

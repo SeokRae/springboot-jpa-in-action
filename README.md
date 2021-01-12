@@ -54,7 +54,7 @@
 - 정리
   - 각 방식마다 장단점이 분명하게 차이가 있기때문에 현재 상황이 어떤지 확인하고 맞춰서 사용할 것
 
-## Spring-Data-Jpa
+## [Spring-Data-Jpa](/springboot-jpa-data/README.md)
 - JPA 코드를 Spring data Jpa로 개선
   - 메서드 이름으로 쿼리 생성
   - Jpa `@NamedQuery`
