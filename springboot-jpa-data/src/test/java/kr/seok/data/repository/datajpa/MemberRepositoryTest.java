@@ -618,4 +618,63 @@ class MemberRepositoryTest {
     }
 
 
+    @Test
+    @DisplayName("Native Query 활용 테스트 지만 결국 JdbcTemplate을 사용하던가 Projections 사용, 최종은 QueryDSL")
+    public void nativeQueryTest() throws Exception {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+        Member m1 = new Member("m1", 30, teamA);
+        Member m2 = new Member("m2", 20, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        /*
+            select
+                *
+            from
+                member
+            where
+                username = ?
+         */
+        Member member = memberRepository.findByNativeQuery("m1");
+        assertThat(member.getUsername()).isEqualTo("m1");
+    }
+
+
+    /* 페이징은 되지만 동적 쿼리를 사용하기 힘듬 */
+    @Test
+    @DisplayName("Native Query 대신 Projections 사용 테스트")
+    public void nativeQueryProjectionTest() throws Exception {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+        Member m1 = new Member("m1", 30, teamA);
+        Member m2 = new Member("m2", 20, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        /*
+            select
+                m.member_id as id,
+                m.username,
+                t.name as teamName
+            from
+                member m
+            left join
+                team t limit ?
+         */
+        Page<MemberProjection> byNativeProjection = memberRepository.findByNativeProjection(PageRequest.of(0, 10));
+
+        byNativeProjection.forEach(member -> {
+            System.out.println("member username = " + member.getUsername());
+            System.out.println("member username = " + member.getTeamName());
+        });
+    }
 }

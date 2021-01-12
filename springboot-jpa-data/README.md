@@ -489,7 +489,31 @@
   - 실무의 복잡한 쿼리를 해결하기에 한계가 있다.
 
 > Native Query
+- 최후의 수단으로 사용하는 수단중 하나
+  - Native Query 또는 Projections 이라고는 하나 QueryDSL로 못할 수가 없다. 
+  - 한번에 못가져올거면 차라리 두 세번에 걸쳐서 가져올것..
 
+- 스프링 데이터 JPA Native Query
+  - 페이징 지원
+  - 반환 타입
+    - Object[]
+    - Tuple
+    - DTO (스프링 데이터 인터페이스 Projections 지원)
+  - 제약 사항
+    - sort 파라미터를 통한 정렬이 정상 동작하지 않을 수도 있다.
+    - JPQL처럼 애플리케이션 로딩 시점에 문법 확인 불가
+    - 동적 쿼리 불가
+
+- 위치기반 파라미터
+  - JPQL의 경우 1부터 시작, Native Query의 경우 0부터 시작
+
+- DTO 변환 시
+  - DTO 대신 JPA TUPLE 조회
+  - DTO 대신 MAP 조회
+  - @SqlResultSetMapping 복잡
+  - Hibernate ResultTransformer를 사용해야함 복잡
+  - [프로젝션으로 DTO 쿼리 만드는 방법](https://vladmihalcea.com/the-best-way-to-map-a-projection-query-to-a-dto-with-jpa-and-hibernate/)
+  - 네이티브 SQL을 DTO로 조회할 때는 `JdbcTemplate` or `MyBatis` 권장
 
 ## 참고
 - [리포지토리 분리](https://www.inflearn.com/questions/101103)
