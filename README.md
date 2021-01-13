@@ -103,6 +103,9 @@
   - QueryDSL 공부해라
 
 ## [Query DSL](springboot-jpa-querydsl/README.md)
+- 프로젝트 설정
+  - [x] QueryDSL 설정 및 검증
+    - compileQuerydsl 후 검증용 Q 타입 생성 (build/generated/querydsl/`패키지명.엔티티클래스.java`) 확인
 
 ## 단축키 꿀팁 모음
 - 단축키 shift + command + c

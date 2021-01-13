@@ -49,11 +49,6 @@ subprojects {
         annotationProcessor 'org.projectlombok:lombok'
 
     }
-
-    clean {
-        delete 'out'
-    }
-
 }
 
 project(":springboot-jpa-shop") {
@@ -125,7 +120,38 @@ project(":springboot-jpa-data") {
 }
 
 project(":springboot-jpa-querydsl") {
-    dependencies {
+    /* QueryDSL 플러그인 추가 */
+    apply plugin: "com.ewerk.gradle.plugins.querydsl"
 
+    dependencies {
+        /* QueryDSL 라이브러리로 의존관계 추가 */
+        implementation 'com.querydsl:querydsl-jpa'
+
+        testImplementation('org.springframework.boot:spring-boot-starter-test') {
+            /* JUnit 5를 사용하는 경우 Junit4 내용을 제거해줘야 함, (이하 버전 사용하려는 경우 주석처리) */
+            exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+        }
+    }
+    /* JUnit5를 사용하는 경우 설정 */
+    test {
+        useJUnitPlatform()
+    }
+    /* build와 관련된 내용 추가 */
+
+    //querydsl 추가 시작
+    def querydslDir = "$buildDir/generated/querydsl"
+
+    querydsl {
+        jpa = true
+        querydslSourcesDir = querydslDir
+    }
+    sourceSets {
+        main.java.srcDir querydslDir
+    }
+    configurations {
+        querydsl.extendsFrom compileClasspath
+    }
+    compileQuerydsl {
+        options.annotationProcessorPath = configurations.querydsl
     }
 }

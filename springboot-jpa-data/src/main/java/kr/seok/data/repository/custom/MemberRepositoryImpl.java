@@ -1,7 +1,6 @@
 package kr.seok.data.repository.custom;
 
 import kr.seok.data.domain.Member;
-import kr.seok.data.repository.custom.MemberRepositoryCustom;
 import lombok.RequiredArgsConstructor;
 
 import javax.persistence.EntityManager;
