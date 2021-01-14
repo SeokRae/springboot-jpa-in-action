@@ -1,4 +1,7 @@
 spring:
+  profiles:
+    active: local
+
   # db connection 정보
   datasource:
     url: jdbc:h2:~/docker/h2/data/querydsl

@@ -19,7 +19,7 @@
 
 ## 기본 문법
 
-> JPQL vs Querydsl
+> [JPQL vs Querydsl](src/test/java/kr/seok/querydsl/domain/JpaVsQuerydsl1문법Test.java)
 - JPA 코드 기반 조회쿼리 작성
 - Querydsl 기반 조회쿼리 작성
   - `EntityManager`로 `JPAQueryFactory` 클래스를 생성
@@ -46,14 +46,14 @@
   spring.jpa.properties.hibernate.use_sql_comments: true
   ```
 
-> [검색 조건 쿼리](http://www.querydsl.com/static/querydsl/4.4.0/apidocs/)
+> [검색 조건 쿼리](src/test/java/kr/seok/querydsl/domain/Querydsl2검색Test.java)
 - `queryFactory`의 `where`메서드에 검색 조건 `.and()`, `.or()`을 사용할 수 있다.
 - `.select()`, `.from()` -> `selectFrom()` 으로 축약 가능
 - where() 메서드의 경우 predicate ... 를 파라미터로 받아 AND 로 처리하는 것을 기본값으로 한다.
   - 이 경우 null 값은 무시하게 되고 이러한 방식을 이용하여 메서드 추출을 활용하여 동적쿼리를 깔끔하게 만들 수 있다.
+- [참고](http://www.querydsl.com/static/querydsl/4.4.0/apidocs/)
 
 > 결과 조회 메서드 종류
-
 - 결과 조회 메서드
 
   |메서드명|설명|예외|
@@ -67,12 +67,12 @@
 - 주의사항
   - `fetchResults()` 메서드가 페이징 정보까지 포함하지만, 페이징 쿼리에 부하가 걸리는 경우 `fetchCount()`를 따로 날리는 것이 효율적
 
-> 정렬
+> [정렬](src/test/java/kr/seok/querydsl/domain/Querydsl4정렬Test.java)
 - `orderBy()`
   - `desc()`, `asc()`: 일반정렬
   - `nullsLast()`, `nullsFirst()`: null 데이터 순서 부여
 
-> 페이징
+> [페이징](src/test/java/kr/seok/querydsl/domain/Querydsl5페이징Test.java)
 - `offset()`, `limit()`
   - `offset()`: 기본 0부터 시작
   - `limit()`: 조회할 데이터 건수
@@ -83,10 +83,10 @@
   - 자동화된 count 쿼리는 원본 쿼리와 같이 모두 조인하기 때문에 성능이 안나올 수 있다.
   - count 쿼리에 조인이 필요없는 성능 최적화가 필요한 경우 count 전용 쿼리를 별도로 작성할 필요성이 있다.
 
-> [집합](http://www.querydsl.com/static/querydsl/4.4.0/apidocs/)
+> [집합](src/test/java/kr/seok/querydsl/domain/Querydsl6집합Test.java)
 - aggregation
   - sum, avg, max, min과 같은 집계성 쿼리
-
+  - [참고](http://www.querydsl.com/static/querydsl/4.4.0/apidocs/)
 - Tuple
   - querydsl이 제공하는 Tuple 클래스
   - 데이터의 타입에 상관없이 저장 및 조회 가능
@@ -95,7 +95,7 @@
 - `groupBy()`, `having()`
   - 데이터 셋에 따른 테스트를 많이 해봐야 할 듯
 
-> 조인 - 기본 조인
+> [조인 - 기본 조인](src/test/java/kr/seok/querydsl/domain/Querydsl7조인Test.java)
 - 첫 번쨰 파라미터에 조인 대상을 지정, 두 번째 파라미터에 별칭으로 사용할 Q 타입을 지정
 
 - 조인의 종류
@@ -143,7 +143,7 @@
   - 활용2편의 내용을 참고
   - 자주 사용되는 내용
 
-> 서브쿼리
+> [서브쿼리](src/test/java/kr/seok/querydsl/domain/Querydsl8서브쿼리Test.java)
 - `com.querydsl.jpa.JPAExpressions` 사용
   - 서브 쿼리 eq
   - 서브 쿼리 goe
@@ -167,7 +167,7 @@
   - 데이터에 집중하면 인라인 뷰를 많이 줄일 수 있다.
   - 한번에 조회되는 쿼리가 정말 중요한지? 생각해보기
 
-> Case 문
+> [Case 문](src/test/java/kr/seok/querydsl/domain/Querydsl9조건문Test.java)
 - select, 조건절(where), order by에서 사용 가능
   - 단순한 조건
     - `when().then()`
@@ -177,7 +177,7 @@
 - 정리
   - case 같은건 application에서 처리하는게 좋지 않을까 생각하기
 
-> 상수, 문자 더하기
+> [상수, 문자 더하기](src/test/java/kr/seok/querydsl/domain/Querydsl10상수및문자더하기Test.java)
 - 상수 더하기
   - `Expressions.constant(xxx)`
   - 쿼리는 기본 쿼리가 날아가고 조회된 결과 데이터에 추가 됨
@@ -188,49 +188,85 @@
   - enum 타입 같은경우에 활용할 수 있음
 
 ## 중급 문법
-> 프로젝션과 결과 반환
-- 기본
+> [프로젝션과 결과 반환](src/test/java/kr/seok/querydsl/domain/Querydsl11프로젝션기본Test.java)
+- **기본**
   - select 대상 지정: **프로젝션 대상이 하나**
     - 프로젝션 대상이 하나면 타입을 명확하게 지정할 수 있음
   - 튜플 조회: **프로젝션 대상이 둘 이상**
     - `com.querydsl.core.Tuple`
     - 프로젝션 대상이 둘 이상이면 튜플이나 DTO로 조회
-  
-- DTO 조회
-  - 순수 JPA에서 DTO 조회
-    - 순수 JPA에서 DTO를 조회할 때는 new 명령어를 사용해야한다.
-    - DTO의 package 이름을 다 적어줘야 한다.
-    - 생성자 방식만 지원한다.
 
-  - Querydsl 빈 생성
+- 정리
+  - tuple을 사용하는 경우 repository에서 사용한 뒤 dto로 변환해서 넘기는 것을 권장
+
+- **DTO 조회**
+  - `순수 JPA에서 DTO 조회`
+    - 순수 JPA에서 DTO를 조회할 때는 `new` 명령어를 사용해야한다.
+    - DTO의 `package` 이름을 다 적어줘야 한다.
+    - 생성자 방식만 지원한다.
+    - 사용하기에 불편, 밑에 제시하는 방식을 사용하기
+
+  - `Querydsl 빈 생성`
     - 결과를 DTO 반환 시 사용
     - 프로퍼티 접근
+      - `Projections.bean()`
     - 필드 직접 접근
+      - `Projections.fields()`
+    - 별칭이 다를 때
+      - `Projections.fields()` 를 사용하되 아래에서 제시하는 문법을 활용
+      - 프로퍼티나, 필드 접근 생성 방식에서 이름이 다를 때 해결 방안 
+      - `ExpressionUtils.as(source,alias)`: 필드나, 서브 쿼리에 별칭 적용 
+      - username.as("memberName"): 필드에 별칭 적용
     - 생성자 사용
+      - `Projections.constructor()`
   
-- @QueryProjection
-  - 생성자 + @QueryProjection
-  - @QueryProjection 활용
+- `@QueryProjection`
+  - 생성자에 `@QueryProjection` 설정 후 compileQuerydsl 실행하여 Q파일 생성
+  - `@QueryProjection` 활용
     - 컴파일러로 타입을 체크할 수 있으므로 가장 안전한 방법
-    - DTO에 QueryDSL 어노테이션을 유지해야 하는 점과 DTO까지 Q 파일을 생성해야 하는 단점
 
-> 동적쿼리
+  - 단점
+    - DTO에 QueryDSL 어노테이션을 유지해야 하는 점과 DTO까지 Q 파일을 생성해야 하는 단점
+    - DTO에 QueryDSL에 대한 의존성을 갖게 되는 문제
+
+- 정리
+  - 결과 1개 projection, 결과 2개 tuple
+  - `tuple`은 repository에서 `dto`로 변환
+  - `Projection.constructor()` vs `@QueryProjection`
+    - `constructor()`로 사용하는 경우 `RuntimeException` 실행 시점에 오류를 확인가능
+    - `@QueryProjection`로 사용하는 경우 `Compile 시점`에 오류를 발생하여 개발 시점에 오류 확인 가능
+    - 필드가 많아지면 `Projection`을 사용할 것인지 `QType`을 사용할 것인지 고민을 하게 됨
+    - `@QueryProjection`로 사용하는 경우 여러 Layer에 걸쳐서 사용되는 DTO가 Querydsl에 의존되는 문제
+      - 하지만 프로젝트에 Querydsl를 의존하여 사용하도록 설계가 되어있는 경우 DTO를 Querydsl에 의존되도록 사용
+    - DTO를 순수하게 사용하려는경우 `Projection.constructor()` 를 사용
+  - `Projection.bean()`, `Projection.fields()`를 사용하기도 함
+
+> [동적쿼리](src/test/java/kr/seok/querydsl/domain/Querydsl12동적쿼리Test.java)
 - 동적 쿼리를 해결하는 두 가지 방법
 
 - BooleanBuilder 사용
 - Where 다중 파라미터 사용
-  - where 조건에 null 값은 무시된다.
-  - 메서드를 다른 쿼리에서도 재활용할 수 있다.
-  - 쿼리 자체의 가독성이 높아진다.
+  - where 조건에 `null` 값은 무시된다.
+  - 메서드를 다른 쿼리에서도 `재활용`할 수 있다.
+  - 쿼리 자체의 `가독성`이 높아진다.
 
-> 수정, 삭제 벌크 연산
+- 정리
+  - 두 방법 모두 활용에 따라 다름
+  - 메서드별로 재사용할 수 있도록 설계하는 것이 중요
+
+> [수정, 삭제 벌크 연산](src/test/java/kr/seok/querydsl/domain/Querydsl13벌크연산Test.java)
 - `execute()` 메서드 사용 시 bulk 쿼리 호출
-- 주의사항
-  - 영속성 컨텍스트에 있는 엔티티를 무시하고 실행되기 때문에 배치 쿼리를 실행하고 나면 영속성 컨텍스트를 초기화 하는 것이 안전
 
-> SQL function 호출
-- 주의사항
-  - SQL function은 JPA와 같이 Dialect에 등록된 내용만 호출할 수 있다.
+- **주의사항**
+  - 영속성 컨텍스트에 있는 엔티티를 무시하고 실행되기 때문에 
+    배치 쿼리를 실행하고 나면 영속성 컨텍스트를 초기화 하는 것이 안전하다.
+
+> [SQL function 호출](src/test/java/kr/seok/querydsl/domain/Querydsl14SQLFunctionTest.java)
+- SQL function은 JPA와 같이 Dialect에 등록된 내용만 호출할 수 있다.
+  - `Expressions.stringTemplate()` 사용 함수
+    - `function('lower', member1.username)`
+  - ANSI 표준 함수
+    - `lower(member1.username)`
 
 ## 실무 활용 - 순수 JPA와 Querydsl
 
@@ -238,12 +274,25 @@
 
 - JPAQueryFactory 스프링 빈 등록
   - JPAQueryFactory 를 스프링 빈으로 등록해서 주입받아 사용가능
-  - 스프링이 주입해주는 엔티티 매니저는 실제 동작 시점에 진짜 엔티티 매니저를 찾아주는 프록시용 가짜 엔티티 매니저이므로 동시성 문제는 걱정할 필요 없다.
+  - 스프링이 주입해주는 엔티티 매니저는 실제 동작 시점에 진짜 엔티티 매니저를 찾아주는 
+    프록시용 가짜 엔티티 매니저이므로 동시성 문제는 걱정할 필요 없다.
   - 가짜 엔티티 매니저는 실제 사용 시점에 트랜잭션 단위로 실제 엔티티 매니저(영속성 컨텍스트)를 할당해준다.
 
 > 동적 쿼리와 성능 최적화 조회
 - Builder 사용
+  - `@QueryProjection`을 추가, QMemberTeamDto 를 생성
+  ```shell
+  ./gradlew compileQuerydsl
+  ```
+  - QueryProjection 을 사용하면 해당 DTO가 Querydsl을 의존
+  - 의존이 싫으면, 해당 에노테이션을 제거, `Projection.bean()`, `fields()`, `constructor()` 을 사용
+
 - Where 절 파라미터 사용
+  - 파라미터 방식을 사용하면 조건 재사용
+  
+- 정리
+  - `builder`를 사용하여 쿼리의 `조건`을 하나의 메서드에 작성
+  - `조건 별 메서드`를 각각 작성하여 재사용성을 높임
 
 > 조회 API 컨트롤러 개발
 
