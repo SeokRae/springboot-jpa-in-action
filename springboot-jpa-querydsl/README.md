@@ -15,8 +15,7 @@
       ./gradlew clean compileQuerydsl
       ```
   - Querydsl QType이 정상 동작하는지 확인
-
-
+    
 ## 기본 문법
 
 > [JPQL vs Querydsl](src/test/java/kr/seok/querydsl/domain/JpaVsQuerydsl1문법Test.java)
@@ -245,14 +244,18 @@
 - 동적 쿼리를 해결하는 두 가지 방법
 
 - BooleanBuilder 사용
-- Where 다중 파라미터 사용
+  - 필수값이 존재하는 경우 생성자에 해당 필드를 추가
+- **[중요] Where 다중 파라미터 사용**
   - where 조건에 `null` 값은 무시된다.
   - 메서드를 다른 쿼리에서도 `재활용`할 수 있다.
   - 쿼리 자체의 `가독성`이 높아진다.
 
 - 정리
   - 두 방법 모두 활용에 따라 다름
-  - 메서드별로 재사용할 수 있도록 설계하는 것이 중요
+  - 메서드별로 재사용할 수 있도록 `설계`하는 것이 중요
+
+- 참고
+  - `Predicate` vs `BooleanExpression` 차이 알아보기
 
 > [수정, 삭제 벌크 연산](src/test/java/kr/seok/querydsl/domain/Querydsl13벌크연산Test.java)
 - `execute()` 메서드 사용 시 bulk 쿼리 호출
@@ -267,6 +270,10 @@
     - `function('lower', member1.username)`
   - ANSI 표준 함수
     - `lower(member1.username)`
+- dialect 경로
+    - `org.hibernate.dialect.{DB}`
+
+- [참고 docs](http://www.querydsl.com/static/querydsl/4.0.8/apidocs/com/querydsl/core/types/dsl/package-summary.html)
 
 ## 실무 활용 - 순수 JPA와 Querydsl
 
@@ -278,7 +285,10 @@
     프록시용 가짜 엔티티 매니저이므로 동시성 문제는 걱정할 필요 없다.
   - 가짜 엔티티 매니저는 실제 사용 시점에 트랜잭션 단위로 실제 엔티티 매니저(영속성 컨텍스트)를 할당해준다.
 
-> 동적 쿼리와 성능 최적화 조회
+- 정리
+  - JPAQueryFactory를 빈으로 생성해서 쓸 수도 있지만 취향차이 일듯..
+
+> [동적 쿼리와 성능 최적화 조회](src/test/java/kr/seok/querydsl/domain/Querydsl17QuerydslOptimizeTest.java)
 - Builder 사용
   - `@QueryProjection`을 추가, QMemberTeamDto 를 생성
   ```shell
@@ -293,23 +303,98 @@
 - 정리
   - `builder`를 사용하여 쿼리의 `조건`을 하나의 메서드에 작성
   - `조건 별 메서드`를 각각 작성하여 재사용성을 높임
+  - **조건이 모두 없게 조회되는 경우 동적쿼리에서 전체 데이터를 조회하는 문제가 생길 수도 있으니 `최소한의 필수 조건`(페이징 또는 limit)을 넣는 것이 좋음**
 
 > 조회 API 컨트롤러 개발
+- API 호출 시 데이터 테스트를 위해 일반 폴더와 테스트 폴더의 프로파일 설정 분리
+- 샘플 데이터 추가를 위한 [InitMember](src/main/java/kr/seok/querydsl/InitMember.java) 클래스 작성
+- Postman을 사용하여 Controller를 REST API 로 호출 테스트
 
 ## 실무 활용 - 스프링 데이터 JPA와 Querydsl
 > 스프링 데이터 JPA 리포지토리로 변경
-> 사용자 정의 리포지토리
+- 스프링 데이터 JPA에서 제공하는 정적 쿼리를 사용할 수 있으나 Querydsl에서 제공하는 동적쿼리를 사용할 순 없다.
+
+> [사용자 정의 리포지토리](src/test/java/kr/seok/querydsl/domain/Querydsl20사용자정의리포지토리Test.java)
+- 스프링 데이터 JPA에서 제공하는 것 이상의 쿼리를 사용하기 위해 Querydsl 라이브러리를 추가
+- 해당 라이브러리를 추가하여 동적 쿼리를 작성하고 사용하기 위해서는 사용자 정의 인터페이스를 작성하여 상속 받아야 한다.
+- 사용자 정의 리포지토리 사용법
+  - 순서1: 사용자 정의 인터페이스 작성
+  - 순서2: 사용자 정의 인터페이스 구현
+  - 순서3: 스프링 데이터 리포지토리에 사용자 정의 인터페이스 상속
+
+- 정리
+  - 사용자 정의 인터페이스 및 구현체를 작성하는 경우
+    - 스프링 데이터 JPA가 `Impl` 이름을 가진 클래스를 스캔하기 때문에 해당 규칙을 지키도록 한다.
+  - 복잡하고 특화된 조회쿼리인 경우 별도의 클래스를 작성하여 유연한 아키텍처를 갖도록 한다. 
+
 > 스프링 데이터 페이징 활용
-- Querydsl 페이징 연동
-- CountQuery 최적화
-- 컨트롤러 개발
+- [Querydsl 페이징 연동](src/test/java/kr/seok/querydsl/domain/Querydsl21스프링데이터페이징Test.java)
+  - 스프링 데이터의 `Page`, `Pageable`을 활용
+  - 방법1: `전체 카운트 및 데이터를 한번에 조회`하는 단순한 방법
+    - `fetchResults()`내용과 전체 카운트를 한번에 조회
+    - 카운트 쿼리 실행시 필요없는 order by 는 제거
+  - 방법2: `데이터 내용`과 `전체 카운트`를 별도로 조회하는 방법
+    - 전체 카운트를 조회 하는 방법을 최적화 할 수 있을 때 분리
+    
+- [CountQuery `최적화`](src/test/java/kr/seok/querydsl/domain/Querydsl22스프링데이터페이징최적화Test.java)
+  - 스프링 데이터 라이브러리에서 제공하는 `PageableExecutionUtils.getPage()`를 활용
+  - count 쿼리가 생략 가능한 경우 생략해서 처리
+    - 페이지 시작이면서 컨텐츠 사이즈가 페이지 사이즈보다 작을 때
+    - 마지막 페이지 일 때 (offset + 컨텐츠 사이즈를 더해서 전체 사이즈 구함)
+
+- [정렬(Sort)](src/test/java/kr/seok/querydsl/domain/Querydsl23스프링데이터최적화정렬Test.java)
+    - 스프링 데이터 JPA는 자신의 `Sort`를 Querydsl의 `OrderSpecifier`로 편리하게 변경하는 기능을 제공
+    - 정렬( Sort )은 조건이 조금만 복잡해져도 Pageable 의 Sort 기능을 사용하기 어렵다.
+    - 루트 `엔티티 범위를 넘어가는 동적 정렬 기능`이 필요하면 스프링 데이터 페이징이 제공하는 Sort 를 사용하기 보다는 `파라미터를 받아서 직접 처리하는 것을 권장`
+
+- 뒤에서 정렬에 대해서 다시 정리 해줄거임
+  - 일단 만들어서 테스트
+  ```http request
+  # team id 순으로 정렬 뒤 member id 순으로 정렬 테스트
+  http://localhost:8080/v5/members?page=0&size=105&sort=team.id,desc&sort=id,desc
+  ```
 
 ## 스프링 데이터 JPA가 제공하는 Querydsl 기능
+- 여기서부터 설명하는 내용은 부족함이 많은 기능들.. 결국 커스텀 필요
+
 > 인터페이스 지원
 - QuerydslPredicateExecutor
+  - 문제점
+    - `조인X` (묵시적 조인은 가능하지만 left join이 불가능하다.)
+    - 클라이언트, 서비스 클래스에서 Querydsl의 의존성을 갖게 된다. 
+    - 복잡한 실무환경에서 사용하기에는 한계가 명확하다.
+    - 탈락 !
+  - 장점
+    - QuerydslPredicateExecutor 는 `Pagable`, `Sort`를 모두 지원하고 정상 동작
 
-> Querydsl Web 지원
+> [Querydsl Web 지원](https://docs.spring.io/spring-data/jpa/docs/2.2.3.RELEASE/reference/html/#core.web.type-safe)
+- 문제점
+  - 단순한 조건만 가능
+  - 조건을 커스텀하는 기능이 복잡하고 명시적이지 않음 
+  - 컨트롤러가 Querydsl에 의존
+  - 복잡한 실무환경에서 사용하기에는 한계가 명확
+  - 탈락 !!
+
 > 리포지토리 지원
 - QuerydslRepositorySupport
-> Querydsl 지원 클래스 직접 만들기
+  - 장점
+    - `getQuerydsl().applyPagination()` 스프링 데이터가 제공하는 페이징을 Querydsl로 편리하게 변환 가능
+      (단! Sort는 오류발생)
+    - `from()` 으로 시작 가능(최근에는 QueryFactory를 사용해서 `select()` 로 시작하는 것이 더 명시적)
+    - EntityManager 제공
+  - 치명적인 문제점
+    - Querydsl 3.x 버전을 대상으로 만듬
+    - Querydsl 4.x에 나온 JPAQueryFactory로 시작할 수 없음
+      - select로 시작할 수 없음 (from으로 시작해야함) 
+    - QueryFactory 를 제공하지 않음
+    - 스프링 데이터 `Sort 기능`이 `정상 동작하지 않음`
 
+> [Querydsl 지원 클래스 직접 만들기](src/test/java/kr/seok/querydsl/domain/Querydsl25사용자정의SupportTest.java)
+- QuerydslRepositorySupport의 한계점을 지원하는 클래스 작성
+  - 스프링 데이터가 제공하는 페이징을 편리하게 변환 
+  - 페이징과 카운트 쿼리 분리 가능
+  - 스프링 데이터 Sort 지원
+  - select(), selectFrom() 으로 시작 가능 
+  - EntityManager, QueryFactory 제공
+
+  

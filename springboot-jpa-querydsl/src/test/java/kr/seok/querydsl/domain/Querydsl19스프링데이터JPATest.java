@@ -1,7 +1,6 @@
 package kr.seok.querydsl.domain;
 
-import kr.seok.querydsl.domain.Member;
-import kr.seok.querydsl.domain.repository.MemberJpaRepository;
+import kr.seok.querydsl.domain.repository.MemberRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,19 +14,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Transactional
-class Querydsl15OnlyJpaTest {
+class Querydsl19스프링데이터JPATest {
+
     @Autowired
     EntityManager em;
+
     @Autowired
-    MemberJpaRepository memberJpaRepository;
+    MemberRepository memberRepository;
 
     @Test
-    @DisplayName("Repository 작동 테스트")
+    @DisplayName("스프링 데이터 JPA 정적쿼리 동작 확인 테스트")
     public void basicTest() {
         Member member = new Member("member1", 10);
-        memberJpaRepository.save(member);
+        memberRepository.save(member);
         /* 데이터 조회를 확인하기 위한 테스트 */
-        Member findMember = memberJpaRepository.findById(member.getId()).get();
+        Member findMember = memberRepository.findById(member.getId()).get();
         assertThat(findMember).isEqualTo(member);
 
         /*
@@ -39,9 +40,17 @@ class Querydsl15OnlyJpaTest {
             from
                 member member0_
          */
-        List<Member> result1 = memberJpaRepository.findAll();
+        List<Member> result1 = memberRepository.findAll();
         assertThat(result1).containsExactly(member);
 
+        /*
+            select
+                generatedAlias0
+            from
+                Member as generatedAlias0
+            where
+                generatedAlias0.username=:param0
+        */
         /*
             select
                 member0_.member_id as member_i1_1_,
@@ -53,7 +62,8 @@ class Querydsl15OnlyJpaTest {
             where
                 member0_.username=?
          */
-        List<Member> result2 = memberJpaRepository.findByUsername("member1");
+        List<Member> result2 = memberRepository.findByUsername("member1");
         assertThat(result2).containsExactly(member);
     }
+
 }

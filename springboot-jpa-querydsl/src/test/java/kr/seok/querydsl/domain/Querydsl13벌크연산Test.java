@@ -1,9 +1,6 @@
 package kr.seok.querydsl.domain;
 
-import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -58,11 +55,22 @@ public class Querydsl13벌크연산Test {
             where
                 age<?
          */
+
         long count = queryFactory
                 .update(member)
                 .set(member.username, "비회원")
                 .where(member.age.lt(28))
                 .execute();
+
+        /* 로직상으로 벌크 연산 후 조회가 필요한 경우 */
+        em.flush();
+        em.clear();
+
+        /* 이런 로직에 대한 검증은 코드로 확인할 수 없음. 꼭 눈으로 확인해야 함 */
+        List<Member> fetch = queryFactory.selectFrom(member).fetch();
+        /* 영속성 컨텍스트와 DB 데이터 확인 */
+        fetch.forEach(member -> System.out.println("member -> " + member));
+
         assertThat(count).isEqualTo(2);
     }
 
@@ -112,10 +120,8 @@ public class Querydsl13벌크연산Test {
                 age=age*?
          */
         long count = queryFactory
-                .update(member)
-                .set(
-                        member.age, member.age.multiply(1)
-                )
+                .delete(member)
+                .where(member.age.gt(18))
                 .execute();
         assertThat(count).isEqualTo(4);
     }

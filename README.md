@@ -107,6 +107,17 @@
   - [x] QueryDSL 설정 및 검증
     - compileQuerydsl 후 검증용 Q 타입 생성 (build/generated/querydsl/`패키지명.엔티티클래스.java`) 확인
 
+  - [x] JPQL과 Querydsl의 차이점
+  - [x] Querydsl에서 제공하는 메서드 `검색 조건`, `정렬`, `페이징`, `집합`, `조건문`
+  - [x] Querydsl 조인 활용
+  - [x] Querydsl 서브쿼리
+  - [x] `Projection`과 `@QueryProjection`
+  - [x] 동적쿼리
+  - [x] Querydsl bulk 연산
+  - [x] Querydsl 사용자 정의 레포지토리
+  - [x] Querydsl 페이징 최적화
+  - [x] Querydsl 실무 활용가능 커스텀 클래스
+
 ## 단축키 꿀팁 모음
 - 단축키 shift + command + c
     - 해당 폴더 경로 복사: 터미널에 복사해서 빠르게 이동

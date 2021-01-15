@@ -2,6 +2,7 @@ package kr.seok.querydsl.domain;
 
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import org.hibernate.dialect.H2Dialect;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,9 @@ import javax.persistence.PersistenceContext;
 import static kr.seok.querydsl.domain.QMember.member;
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * @see H2Dialect
+ */
 @SpringBootTest
 @Transactional
 public class Querydsl14SQLFunctionTest {

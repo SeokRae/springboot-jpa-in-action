@@ -54,6 +54,18 @@ public class Querydsl12동적쿼리Test {
         Integer ageParam = 10;
 
         /* 쿼리 조회 메서드 */
+        /*
+            select
+                member0_.member_id as member_i1_1_,
+                member0_.age as age2_1_,
+                member0_.team_id as team_id4_1_,
+                member0_.username as username3_1_
+            from
+                member member0_
+            where
+                member0_.username=?
+                and member0_.age=?
+         */
         List<Member> result = searchMember1(usernameParam, ageParam);
 
         Assertions.assertThat(result.size()).isEqualTo(1);
@@ -61,7 +73,10 @@ public class Querydsl12동적쿼리Test {
 
     /* 하나의 쿼리조건을 한번에 작성하는 방법 */
     private List<Member> searchMember1(String usernameCond, Integer ageCond) {
-        BooleanBuilder builder = new BooleanBuilder();
+        BooleanBuilder builder = new BooleanBuilder(
+                /* 필수값이 존재하는 경우 생성자에 추가 */
+                // member.username.eq(usernameCond)
+        );
 
         if (usernameCond != null)
             builder.and(member.username.eq(usernameCond));
@@ -73,6 +88,7 @@ public class Querydsl12동적쿼리Test {
                 .where(builder)
                 .fetch();
     }
+
     @Test
     @DisplayName("동적쿼리 where 조건 별로 작성하는 방법")
     public void 동적쿼리_WhereParam() {
@@ -86,11 +102,11 @@ public class Querydsl12동적쿼리Test {
     private List<Member> searchMember2(String usernameCond, Integer ageCond) {
         return queryFactory
                 .selectFrom(member)
-                /* where 조건에 null 값은 무시 */
+                /* where 조건에 null 값은 무시되는 특징을 활용하여 각 조건마다 메서드를 생성 */
                 .where(usernameEq(usernameCond), ageEq(ageCond))
                 .fetch();
     }
-    /* 메서드를 다른 쿼리에서도 재활용 */
+    /* 메서드를 다른 쿼리에서도 재사용 가능 */
     private BooleanExpression usernameEq(String usernameCond) {
         return usernameCond != null ? member.username.eq(usernameCond) : null;
     }

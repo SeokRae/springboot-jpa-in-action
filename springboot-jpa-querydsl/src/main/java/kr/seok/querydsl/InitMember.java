@@ -16,11 +16,13 @@ import javax.persistence.PersistenceContext;
 @RequiredArgsConstructor
 public class InitMember {
     private final InitMemberService initMemberService;
+    /* 스프링 실행 시 데이터 생성 */
     @PostConstruct
     public void init() {
         initMemberService.init();
     }
 
+    /* @PostConstruct와  @Transactional를 같이 사용할 수 없어서 service 생성 */
     @Component
     static class InitMemberService {
         @PersistenceContext
@@ -28,10 +30,13 @@ public class InitMember {
 
         @Transactional
         public void init() {
+            /* team A, B 생성 */
             Team teamA = new Team("teamA");
             Team teamB = new Team("teamB");
             em.persist(teamA);
             em.persist(teamB);
+
+            /* 두 팀에 속하는 멤버 생성 */
             for (int i = 0; i < 100; i++) {
                 Team selectedTeam = i % 2 == 0 ? teamA : teamB;
                 em.persist(new Member("member" + i, i, selectedTeam));
