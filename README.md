@@ -119,7 +119,7 @@
   - [x] Querydsl 실무 활용가능 커스텀 클래스
 
 
-## [Querydsl Query]
+## [Querydsl Query](springboot-jpa-querydsl-basic/README.md)
 
 ## 단축키 꿀팁 모음
 - 단축키 shift + command + c
