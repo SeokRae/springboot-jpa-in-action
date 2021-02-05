@@ -1,3 +1,4 @@
 rootProject.name = 'springboot-jpa-in-action'
 include 'springboot-jpa-shop', 'springboot-jpa-shop-optimize', 'springboot-jpa-data', 'springboot-jpa-querydsl'
+include 'springboot-jpa-querydsl-basic'
 
