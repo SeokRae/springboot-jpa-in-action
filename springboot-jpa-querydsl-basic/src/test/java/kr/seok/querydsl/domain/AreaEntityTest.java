@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AreaEntityTest {
 
     @Autowired
-    AreaRepository areaRepository;
+    private AreaRepository areaRepository;
 
     @BeforeEach
     void setUp() {
@@ -93,6 +93,7 @@ class AreaEntityTest {
             });
         });
     }
+
     @Test
     @DisplayName("Group By 테스트")
     void testCase5() {
@@ -101,6 +102,15 @@ class AreaEntityTest {
             areaDtos.forEach(areaDto -> {
                 System.out.println("Key :: " + s + " :: Data " + areaDto);
             });
+        });
+    }
+
+    @Test
+    @DisplayName("Group By field 명으로 동적 쿼리 작성")
+    void testCase6() {
+        List<AreaDto> areaGroupBy = areaRepository.getAreaGroupBy();
+        areaGroupBy.forEach(areaDto -> {
+            System.out.println("Data : " + areaDto);
         });
     }
 }

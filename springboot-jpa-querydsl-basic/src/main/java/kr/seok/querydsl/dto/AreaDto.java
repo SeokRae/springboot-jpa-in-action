@@ -9,6 +9,7 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 public class AreaDto {
+
     private Long id;
     private String depth1Nm;
     private String depth2Nm;
