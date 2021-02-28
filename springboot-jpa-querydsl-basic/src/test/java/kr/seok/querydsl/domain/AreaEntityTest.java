@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,6 +46,18 @@ class AreaEntityTest {
                 .depth4Nm(depth4Nm)
                 .useYn(useYn)
                 .build();
+    }
+
+    @Test
+    @DisplayName("다중 컬럼 동적 쿼리 테스트")
+    void testCase7() {
+        List<AreaEntity> areaList = Arrays.asList(
+                setArea(1111010100L, "서울특별시", "종로구", "청운동", "", true)
+                , setArea(1111010200L, "서울특별시", "종로구", "신교동", "", true)
+                , setArea(1111010300L, "서울특별시", "종로구", "궁정동", "", true)
+        );
+        areaRepository.getMultiColumnAndRow(areaList)
+                .forEach(System.out::println);
     }
 
     @Test

@@ -1,10 +1,13 @@
 package kr.seok.querydsl.repository.querydsl;
 
 import com.google.common.base.Strings;
-import com.querydsl.core.types.Expression;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.QBean;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import kr.seok.querydsl.domain.AreaEntity;
 import kr.seok.querydsl.dto.AreaDto;
 
 import javax.persistence.EntityManager;
@@ -12,8 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 import static kr.seok.querydsl.domain.QAreaEntity.areaEntity;
 
 public class AreaQuerydslRepositoryImpl implements AreaQuerydslRepository {
@@ -48,6 +50,20 @@ public class AreaQuerydslRepositoryImpl implements AreaQuerydslRepository {
                 .groupBy(
                         areaEntity.depth1Nm
                 ).fetch();
+    }
+
+    @Override
+    public List<AreaDto> getMultiColumnAndRow(List<AreaEntity> areas) {
+        BooleanBuilder builder = new BooleanBuilder();
+        areas.forEach(area ->
+                builder.or(
+                        areaEntity.id.eq(area.getId())
+                                .and(areaEntity.depth3Nm.eq(area.getDepth3Nm()))
+                ));
+        return queryFactory
+                .select(getFields())
+                .from(areaEntity)
+                .fetch();
     }
 
     private List<AreaDto> getAreaList() {
